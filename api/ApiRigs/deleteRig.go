@@ -2,50 +2,53 @@ package ApiRigs
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"os"
 	"time"
 
-	"mineralos/api"
-	"mineralos/db"
+	"github.com/laxamore/mineralos/api"
+	"github.com/laxamore/mineralos/db"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func NewRig(c *gin.Context) {
+func DeleteRig(c *gin.Context) {
 	result := api.Result{
 		Code: 400,
 		Response: map[string]interface{}{
-			"rig_id": nil,
+			"msg": "delete failed",
 		},
 	}
 
-	newUUID := uuid.New()
+	bodyByte, err := c.GetRawData()
+
+	var bodyData map[string]interface{}
+	json.Unmarshal(bodyByte, &bodyData)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	client, err := db.MongoClient(ctx)
 	defer cancel()
 
 	if err != nil {
-		log.Fatalf("DB Connection Error:\n%v", err)
+		log.Panicf("DB Connection Error:\n%v", err)
 	}
 
 	collection := client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("rigs")
 
-	_, err = collection.InsertOne(ctx, bson.D{{
-		"rig_id", fmt.Sprintf("%s", newUUID),
+	_, err = collection.DeleteOne(ctx, bson.D{{
+		"rig_id", bodyData["rig_id"],
 	}})
 
 	if err != nil {
-		log.Fatalf("Create New RIG Error:\n%v", err)
+		log.Panicf("Delete RIG Error:\n%v", err)
 	}
 
 	result.Code = 200
 	result.Response = map[string]interface{}{
-		"rig_id": fmt.Sprintf("%s", newUUID),
+		"msg": "delete success",
 	}
 
 	c.JSON(result.Code, result.Response)

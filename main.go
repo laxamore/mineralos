@@ -2,10 +2,12 @@ package main
 
 import (
 	"log"
-	"mineralos/api/ApiRigs"
 
 	"github.com/gin-gonic/gin"
 	"github.com/joho/godotenv"
+	"github.com/laxamore/mineralos/api/ApiRigs"
+	"github.com/laxamore/mineralos/api/ApiUsers"
+	"github.com/laxamore/mineralos/api/Middleware"
 )
 
 func main() {
@@ -13,13 +15,16 @@ func main() {
 	err := godotenv.Load()
 
 	if err != nil {
-		log.Fatalf("Error loading .env file")
+		log.Panicf("Error loading .env file")
 	}
 
-	apiServer := gin.Default()
+	router := gin.Default()
 
-	apiServer.POST("/newrig", ApiRigs.NewRig)
-	apiServer.DELETE("/deleterig", ApiRigs.DeleteRig)
+	router.POST("/newrig", ApiRigs.NewRig)
+	router.DELETE("/deleterig", ApiRigs.DeleteRig)
+	router.POST("/register", Middleware.BeforeRegister(), ApiUsers.Register)
+	router.POST("/registerToken", Middleware.VerifyAdmin(), ApiUsers.RegisterToken)
+	router.POST("/login", ApiUsers.Login)
 
-	apiServer.Run(":5000")
+	router.Run(":5000")
 }

@@ -1,1 +1,1 @@
-# mineralos
+# MineralOS

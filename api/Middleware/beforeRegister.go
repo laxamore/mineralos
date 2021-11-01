@@ -3,7 +3,6 @@ package Middleware
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -35,7 +34,7 @@ func BeforeRegister() gin.HandlerFunc {
 				log.Panicf("BeforeRegister DB Connection Error:\n%v", err)
 			}
 
-			collection := client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("users")
+			collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("users")
 			cur, err := collection.Find(ctx, bson.D{{}})
 
 			if err != nil {
@@ -58,8 +57,8 @@ func BeforeRegister() gin.HandlerFunc {
 			if len(results) > 0 {
 				if bodyData["token"] != nil {
 					var result map[string]interface{}
-					collection = client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("registerToken")
-					collection.FindOne(ctx, bson.D{{"token", bodyData["token"]}}).Decode(&result)
+					collection = client.Database(os.Getenv("PROJECT_NAME")).Collection("registerToken")
+					collection.FindOne(ctx, bson.D{{Key: "token", Value: bodyData["token"]}}).Decode(&result)
 
 					log.Print(result)
 

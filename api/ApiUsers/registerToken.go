@@ -50,9 +50,9 @@ func RegisterToken(c *gin.Context) {
 		log.Panicf("BeforeRegister DB Connection Error:\n%v", err)
 	}
 
-	collection := client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("registerToken")
+	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("registerToken")
 	var expireAfterSeconds int32 = 43200
-	createIndexRes, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{"createdAt", 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
+	createIndexRes, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
 
 	if err != nil {
 		dropIndexRes, err := collection.Indexes().DropOne(ctx, "createdAt_1")
@@ -60,25 +60,25 @@ func RegisterToken(c *gin.Context) {
 			c.JSON(500, "500 Internal Server Error")
 			log.Panicf("RegisterToken DropIndex Failed:\n%v", err)
 		}
-		log.Printf("RegisterToken DropIndex Response: ", dropIndexRes)
+		log.Printf("RegisterToken DropIndex Response: %v", dropIndexRes)
 
-		createIndexRes, err = collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{"createdAt", 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
+		createIndexRes, err = collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
 		if err != nil {
 			c.JSON(500, "500 Internal Server Error")
 			log.Panicf("RegisterToken CreateIndex Failed:\n%v", err)
 		}
 	}
-	log.Printf("RegisterToken CreateIndex Response: ", createIndexRes)
+	log.Printf("RegisterToken CreateIndex Response: %v", createIndexRes)
 
 	res, err := collection.InsertOne(ctx, bson.D{
 		{
-			"createdAt", time.Now(),
+			Key: "createdAt", Value: time.Now(),
 		},
 		{
-			"token", tokenGenerator(),
+			Key: "token", Value: tokenGenerator(),
 		},
 		{
-			"privilege", bodyData["privilege"],
+			Key: "privilege", Value: bodyData["privilege"],
 		},
 	})
 

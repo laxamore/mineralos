@@ -32,16 +32,16 @@ func Login(c *gin.Context) {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	client, err := db.MongoClient(ctx)
-	collection := client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("users")
+	client, _ := db.MongoClient(ctx)
+	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("users")
 
 	var result map[string]interface{}
 	collection.FindOne(ctx, bson.D{
 		{
-			"username", fmt.Sprintf("%s", bodyData["username"]),
+			Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 		},
 		{
-			"password", sha256_hash,
+			Key: "password", Value: sha256_hash,
 		},
 	}).Decode(&result)
 

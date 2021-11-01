@@ -2,7 +2,6 @@ package ApiRigs
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -33,10 +32,10 @@ func NewRig(c *gin.Context) {
 		log.Panicf("DB Connection Error:\n%v", err)
 	}
 
-	collection := client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("rigs")
+	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("rigs")
 
 	_, err = collection.InsertOne(ctx, bson.D{{
-		"rig_id", fmt.Sprintf("%s", newUUID),
+		Key: "rig_id", Value: newUUID.String(),
 	}})
 
 	if err != nil {
@@ -45,7 +44,7 @@ func NewRig(c *gin.Context) {
 
 	result.Code = 200
 	result.Response = map[string]interface{}{
-		"rig_id": fmt.Sprintf("%s", newUUID),
+		"rig_id": newUUID.String(),
 	}
 
 	c.JSON(result.Code, result.Response)

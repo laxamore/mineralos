@@ -3,7 +3,6 @@ package ApiRigs
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	"os"
 	"time"
@@ -25,6 +24,10 @@ func DeleteRig(c *gin.Context) {
 
 	bodyByte, err := c.GetRawData()
 
+	if err != nil {
+		log.Panicf("DeleteRig Get Body Request Failed:\n%v", err)
+	}
+
 	var bodyData map[string]interface{}
 	json.Unmarshal(bodyByte, &bodyData)
 
@@ -36,10 +39,10 @@ func DeleteRig(c *gin.Context) {
 		log.Panicf("DB Connection Error:\n%v", err)
 	}
 
-	collection := client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("rigs")
+	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("rigs")
 
 	_, err = collection.DeleteOne(ctx, bson.D{{
-		"rig_id", bodyData["rig_id"],
+		Key: "rig_id", Value: bodyData["rig_id"],
 	}})
 
 	if err != nil {

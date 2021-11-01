@@ -42,25 +42,25 @@ func Register(c *gin.Context) {
 	}
 
 	var result map[string]interface{}
-	collection := client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("users")
+	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("users")
 	collection.FindOne(ctx, bson.D{
 		{
-			"email", bodyData["email"],
+			Key: "email", Value: bodyData["email"],
 		},
 	}).Decode(&result)
 
 	if len(result) == 0 {
-		collection = client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("users")
+		collection = client.Database(os.Getenv("PROJECT_NAME")).Collection("users")
 		res, err := collection.InsertOne(ctx, bson.D{
 			{
-				"username", fmt.Sprintf("%s", bodyData["username"]),
+				Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 			}, {
-				"email", fmt.Sprintf("%s", bodyData["email"]),
+				Key: "email", Value: fmt.Sprintf("%s", bodyData["email"]),
 			}, {
-				"password", sha256_hash,
+				Key: "password", Value: sha256_hash,
 			},
 			{
-				"privilege", privilege,
+				Key: "privilege", Value: privilege,
 			},
 		})
 
@@ -75,10 +75,10 @@ func Register(c *gin.Context) {
 		})
 
 		if tokenInfo != nil {
-			collection = client.Database(fmt.Sprintf("%s", os.Getenv("PROJECT_NAME"))).Collection("registerToken")
+			collection = client.Database(os.Getenv("PROJECT_NAME")).Collection("registerToken")
 			_, err := collection.DeleteOne(ctx, bson.D{
 				{
-					"token", fmt.Sprintf("%s", tokenInfo["token"]),
+					Key: "token", Value: fmt.Sprintf("%s", tokenInfo["token"]),
 				},
 			})
 

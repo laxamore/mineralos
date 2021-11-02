@@ -1,7 +1,6 @@
 package ApiUsers
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -12,11 +11,19 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
-func Login(c *gin.Context) {
+type LoginRepositoryInterface interface {
+	FindOne(string, string, interface{}) map[string]interface{}
+}
+
+type LoginController struct{}
+
+func (a LoginController) TryLogin(c *gin.Context, loginRepository LoginRepositoryInterface) {
+	var response api.Result
 	bodyRaw, err := c.GetRawData()
 
 	if err != nil {
@@ -30,48 +37,49 @@ func Login(c *gin.Context) {
 	hasher.Write([]byte(fmt.Sprintf("%s", bodyData["password"])))
 	sha256_hash := hex.EncodeToString(hasher.Sum(nil))
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, _ := db.MongoClient(ctx)
-	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("users")
-
-	var result map[string]interface{}
-	collection.FindOne(ctx, bson.D{
+	result := loginRepository.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
 		{
 			Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 		},
 		{
 			Key: "password", Value: sha256_hash,
 		},
-	}).Decode(&result)
+	})
 
 	if len(result) != 0 {
-		token := generateJWT(result)
-		c.JSON(200, map[string]interface{}{
+		// Create the Claims
+		claims := jwt.MapClaims{
+			"username":  result["username"],
+			"email":     result["email"],
+			"privilege": result["privilege"],
+			"exp":       time.Now().Unix() + 2592000, // Expired After 1 Month
+			"iat":       time.Now().Unix(),
+		}
+
+		log.Print(time.Now().Unix())
+
+		signToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		token, err := signToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
+
+		if err != nil {
+			log.Panicf("Login Token Sign Failed:\n%v", err)
+		}
+
+		response.Code = 200
+		response.Response = gin.H{
 			"jwt": token,
-		})
+		}
 	} else {
-		c.JSON(401, "Login Failed")
+		response.Code = 401
+		response.Response = "Login Failed"
 	}
+
+	c.JSON(response.Code, response.Response)
 }
 
-func generateJWT(loginInfo map[string]interface{}) string {
-	// Create the Claims
-	claims := jwt.MapClaims{
-		"username":  loginInfo["username"],
-		"email":     loginInfo["email"],
-		"privilege": loginInfo["privilege"],
-		"exp":       time.Now().Unix() + 2592000, // Expired After 1 Month
-		"iat":       time.Now().Unix(),
-	}
+func Login(c *gin.Context) {
+	repo := db.MongoDB{}
+	ctrl := LoginController{}
 
-	log.Print(time.Now().Unix())
-
-	signToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err := signToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
-
-	if err != nil {
-		log.Panicf("Login Token Sign Failed:\n%v", err)
-	}
-	return token
+	ctrl.TryLogin(c, repo)
 }

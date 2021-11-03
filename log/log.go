@@ -14,7 +14,7 @@ func Print(format string) {
 	log.Print(format)
 }
 
-func Panic(format string, v ...interface{}) {
+func Panic(format string) {
 	if gin.Mode() == gin.TestMode {
 		log.Print(format)
 	} else {

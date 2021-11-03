@@ -28,7 +28,7 @@ type RegisterRepositoryInterface interface {
 
 type RegisterController struct{}
 
-func (a RegisterController) TryRegister(c *gin.Context, registerRepository RegisterRepositoryInterface) {
+func (a RegisterController) TryRegister(c *gin.Context, repositoryInterface RegisterRepositoryInterface) {
 	var response api.Result
 	response.Code = http.StatusBadRequest
 	response.Response = "Bad Request"
@@ -62,7 +62,7 @@ func (a RegisterController) TryRegister(c *gin.Context, registerRepository Regis
 
 		// Create/Replace MongoDB Indexes For Unique Username & Email
 		isUnique := true
-		createIndexRes, err := registerRepository.IndexesReplaceMany(os.Getenv("PROJECT_NAME"), "users", []mongo.IndexModel{
+		createIndexRes, err := repositoryInterface.IndexesReplaceMany(os.Getenv("PROJECT_NAME"), "users", []mongo.IndexModel{
 			{
 				Keys: bson.D{
 					{Key: "username", Value: 1},
@@ -98,7 +98,7 @@ func (a RegisterController) TryRegister(c *gin.Context, registerRepository Regis
 		}
 		for _, check := range checkIndex {
 			if len(result) == 0 {
-				result = registerRepository.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+				result = repositoryInterface.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
 					{
 						Key: check, Value: fmt.Sprintf("%s", bodyData[check]),
 					},
@@ -112,7 +112,7 @@ func (a RegisterController) TryRegister(c *gin.Context, registerRepository Regis
 		if len(result) == 0 {
 			if tokenInfo != nil {
 				// Delete Register Token
-				_, err := registerRepository.DeleteOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
+				_, err := repositoryInterface.DeleteOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
 					{
 						Key: "token", Value: fmt.Sprintf("%s", tokenInfo["token"]),
 					},
@@ -126,7 +126,7 @@ func (a RegisterController) TryRegister(c *gin.Context, registerRepository Regis
 					errMsg = fmt.Sprintf("Register DeleteOne Error:\n%v", err)
 				} else {
 					// Register New User
-					res, err := registerRepository.InsertOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+					res, err := repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
 						{
 							Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 						}, {

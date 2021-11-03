@@ -14,6 +14,7 @@ import (
 )
 
 type MongoDBInterface interface {
+	Find(string, string, interface{}) ([]map[string]interface{}, error)
 	FindOne(string, string, interface{}) map[string]interface{}
 	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
 	DeleteOne(string, string, interface{}) (*mongo.DeleteResult, error)
@@ -24,6 +25,37 @@ type MongoDBInterface interface {
 }
 
 type MongoDB struct{}
+
+func (a MongoDB) Find(db_name string, collection_name string, filter interface{}) ([]map[string]interface{}, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client, err := MongoClient(ctx)
+
+	if err != nil {
+		Log.Panicf("Error Connecting to MongoDB:\n%v", err)
+	}
+
+	collection := client.Database(db_name).Collection(collection_name)
+	cur, err := collection.Find(ctx, filter)
+
+	if err != nil {
+		return []map[string]interface{}{{}}, err
+	}
+
+	var results []map[string]interface{}
+	for cur.Next(ctx) {
+		//Create a value into which the single document can be decoded
+		var elem map[string]interface{}
+		err := cur.Decode(&elem)
+		if err != nil {
+			Log.Panicf("%v", err)
+		}
+
+		results = append(results, elem)
+	}
+
+	return results, err
+}
 
 func (a MongoDB) FindOne(db_name string, collection_name string, filter interface{}) map[string]interface{} {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)

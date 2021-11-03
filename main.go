@@ -22,8 +22,8 @@ func main() {
 
 	router.POST("/newrig", ApiRigs.NewRig)
 	router.DELETE("/deleterig", ApiRigs.DeleteRig)
-	router.POST("/register", Middleware.BeforeRegister(), ApiUsers.Register)
-	router.POST("/registerToken", Middleware.VerifyAdmin(), ApiUsers.RegisterToken)
+	router.POST("/register", Middleware.BeforeRegister, ApiUsers.Register)
+	router.POST("/registerToken", Middleware.VerifyAdmin, ApiUsers.RegisterToken)
 	router.POST("/login", ApiUsers.Login)
 
 	router.Run(":5000")

@@ -17,23 +17,23 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-type RegisterTokenInterface interface {
+type RegisterTokenRepositoryInterface interface {
 	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
 	IndexesReplaceOne(string, string, mongo.IndexModel) (string, error)
 }
 
 type RegisterTokenController struct{}
 
-func (a RegisterTokenController) TryRegisterToken(c *gin.Context, registerTokenInterface RegisterTokenInterface) {
+func (a RegisterTokenController) TryRegisterToken(c *gin.Context, repositoryInterface RegisterTokenRepositoryInterface) {
 	response := api.Result{
 		Code:     http.StatusInternalServerError,
 		Response: "Internal Server Error",
 	}
 	errMsg := ""
 
-	_, isAdminExists := c.Get("admin")
+	isAdmin, _ := c.Get("admin")
 
-	if !isAdminExists {
+	if !isAdmin.(bool) {
 		response.Code = http.StatusUnauthorized
 		response.Response = "Unauthorized"
 	} else {
@@ -53,7 +53,7 @@ func (a RegisterTokenController) TryRegisterToken(c *gin.Context, registerTokenI
 			response.Response = "Bad Request"
 		} else {
 			var expireAfterSeconds int32 = 43200
-			createIndexRes, err := registerTokenInterface.IndexesReplaceOne(os.Getenv("PROJECT_NAME"), "registerToken", mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
+			createIndexRes, err := repositoryInterface.IndexesReplaceOne(os.Getenv("PROJECT_NAME"), "registerToken", mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
 			if err != nil {
 				response.Code = http.StatusInternalServerError
 				response.Response = "Internal Server Error"
@@ -67,7 +67,7 @@ func (a RegisterTokenController) TryRegisterToken(c *gin.Context, registerTokenI
 					return fmt.Sprintf("%x", b)
 				}()
 
-				res, err := registerTokenInterface.InsertOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
+				res, err := repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
 					{
 						Key: "createdAt", Value: time.Now(),
 					},

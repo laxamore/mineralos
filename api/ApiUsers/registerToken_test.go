@@ -68,10 +68,7 @@ func TestRegisterToken(t *testing.T) {
 			c.Request = &http.Request{
 				Header: make(http.Header),
 			}
-
-			if td.admin {
-				c.Set("admin", td.admin)
-			}
+			c.Set("admin", td.admin)
 
 			jsonbytes, err := json.Marshal(td.bodyData)
 			if err != nil {

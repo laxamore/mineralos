@@ -22,7 +22,7 @@ type LoginRepositoryInterface interface {
 
 type LoginController struct{}
 
-func (a LoginController) TryLogin(c *gin.Context, loginRepository LoginRepositoryInterface) {
+func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepositoryInterface) {
 	var response api.Result
 	bodyRaw, err := c.GetRawData()
 
@@ -37,7 +37,7 @@ func (a LoginController) TryLogin(c *gin.Context, loginRepository LoginRepositor
 	hasher.Write([]byte(fmt.Sprintf("%s", bodyData["password"])))
 	sha256_hash := hex.EncodeToString(hasher.Sum(nil))
 
-	result := loginRepository.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+	result := repositoryInterface.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
 		{
 			Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 		},

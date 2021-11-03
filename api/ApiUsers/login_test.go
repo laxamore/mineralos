@@ -3,14 +3,15 @@ package ApiUsers
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 )
 
@@ -20,9 +21,9 @@ type LoginRepositoryMock struct {
 
 func (r LoginRepositoryMock) FindOne(db_name string, collection_name string, filter interface{}) map[string]interface{} {
 	users := map[string]interface{}{
-		"username":  "laxamore",
-		"email":     "laxamore@gmail.com",
-		"password":  "eb676aabfb58c2fc243b570214b658f51353002cd647190eb700f877bdd3ed0b",
+		"username":  "test",
+		"email":     "test@test.com",
+		"password":  "937e8d5fbb48bd4949536cd65b8d35c426b80d2f830c5c308e2cdec422ae2244",
 		"privilege": "admin",
 	}
 
@@ -39,27 +40,53 @@ func (r LoginRepositoryMock) FindOne(db_name string, collection_name string, fil
 	return nil
 }
 
-func TestLoginUsername(t *testing.T) {
-	gin.SetMode(gin.TestMode)
-	w := httptest.NewRecorder()
-	c, _ := gin.CreateTestContext(w)
-
-	c.Request = &http.Request{
-		Header: make(http.Header),
+func TestLogin(t *testing.T) {
+	type TestData struct {
+		testName     string
+		expectedCode int
+		bodyData     gin.H
 	}
 
-	jsonbytes, err := json.Marshal(gin.H{
-		"username": "laxamore",
-		"password": "39393939",
-	})
-	if err != nil {
-		panic(err)
+	testData := []TestData{
+		{
+			testName:     "SuccessLogin",
+			expectedCode: http.StatusOK,
+			bodyData: gin.H{
+				"username": "test",
+				"password": "test1234",
+			},
+		},
+		{
+			testName:     "FailedLogin",
+			expectedCode: http.StatusUnauthorized,
+			bodyData: gin.H{
+				"username": "test",
+				"password": "test4321",
+			},
+		},
 	}
-	c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
 
-	repo := LoginRepositoryMock{}
-	ctrl := LoginController{}
+	for _, td := range testData {
+		t.Run(td.testName, func(t *testing.T) {
+			gin.SetMode(gin.TestMode)
+			w := httptest.NewRecorder()
+			c, _ := gin.CreateTestContext(w)
 
-	ctrl.TryLogin(c, repo)
-	assert.EqualValues(t, http.StatusOK, w.Code)
+			c.Request = &http.Request{
+				Header: make(http.Header),
+			}
+
+			jsonbytes, err := json.Marshal(td.bodyData)
+			if err != nil {
+				panic(err)
+			}
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
+
+			repo := LoginRepositoryMock{}
+			cntrl := LoginController{}
+
+			cntrl.TryLogin(c, repo)
+			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
+		})
+	}
 }

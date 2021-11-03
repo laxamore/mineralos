@@ -5,6 +5,7 @@
     "api:dev": "reflex -r '\\.go$' -s -- sh -c 'go run main.go'",
     "api:start": "go run main.go",
     "api:build": "go build -o bin/",
+    "api:test": "./api-test.sh",
     "server:dev": "reflex -r '\\.go$' -s -- sh -c 'go run server/main.go'",
     "server:start": "go run server/main.go",
     "server:build": "go build -o bin/server server/main.go"

@@ -79,7 +79,7 @@ func (a LoginController) TryLogin(c *gin.Context, loginRepository LoginRepositor
 
 func Login(c *gin.Context) {
 	repo := db.MongoDB{}
-	ctrl := LoginController{}
+	cntrl := LoginController{}
 
-	ctrl.TryLogin(c, repo)
+	cntrl.TryLogin(c, repo)
 }

@@ -1,100 +1,108 @@
 package ApiUsers
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	Log "github.com/laxamore/mineralos/log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func RegisterToken(c *gin.Context) {
-	_, isAdmin := c.Get("admin")
-
-	if !isAdmin {
-		c.Abort()
-		c.Writer.WriteHeader(http.StatusUnauthorized)
-		c.Writer.Write([]byte("Unauthorized"))
-		return
-	}
-
-	bodyRaw, err := c.GetRawData()
-
-	if err != nil {
-		log.Panicf("RegisterToken Get Body Request Failed:\n%v", err)
-	}
-
-	var bodyData map[string]interface{}
-	json.Unmarshal(bodyRaw, &bodyData)
-
-	if bodyData["privilege"] == nil {
-		c.JSON(400, "400 Bad Request")
-		return
-	}
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	client, err := db.MongoClient(ctx)
-	defer cancel()
-
-	if err != nil {
-		c.JSON(500, "500 Internal Server Error")
-		log.Panicf("BeforeRegister DB Connection Error:\n%v", err)
-	}
-
-	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("registerToken")
-	var expireAfterSeconds int32 = 43200
-	createIndexRes, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
-
-	if err != nil {
-		dropIndexRes, err := collection.Indexes().DropOne(ctx, "createdAt_1")
-		if err != nil {
-			c.JSON(500, "500 Internal Server Error")
-			log.Panicf("RegisterToken DropIndex Failed:\n%v", err)
-		}
-		log.Printf("RegisterToken DropIndex Response: %v", dropIndexRes)
-
-		createIndexRes, err = collection.Indexes().CreateOne(ctx, mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
-		if err != nil {
-			c.JSON(500, "500 Internal Server Error")
-			log.Panicf("RegisterToken CreateIndex Failed:\n%v", err)
-		}
-	}
-	log.Printf("RegisterToken CreateIndex Response: %v", createIndexRes)
-
-	res, err := collection.InsertOne(ctx, bson.D{
-		{
-			Key: "createdAt", Value: time.Now(),
-		},
-		{
-			Key: "token", Value: tokenGenerator(),
-		},
-		{
-			Key: "privilege", Value: bodyData["privilege"],
-		},
-	})
-
-	if err != nil {
-		c.JSON(500, "500 Internal Server Error")
-		log.Panicf("RegisterToken InsertOne Failed:\n%v", err)
-	}
-	log.Printf("RegisterToken InsertOne Respone: %v", res)
-
-	c.JSON(201, gin.H{
-		"token": res,
-	})
+type RegisterTokenInterface interface {
+	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
+	IndexesReplaceOne(string, string, mongo.IndexModel) (string, error)
 }
 
-func tokenGenerator() string {
-	b := make([]byte, 8)
-	rand.Read(b)
-	return fmt.Sprintf("%x", b)
+type RegisterTokenController struct{}
+
+func (a RegisterTokenController) TryRegisterToken(c *gin.Context, registerTokenInterface RegisterTokenInterface) {
+	response := api.Result{
+		Code:     http.StatusInternalServerError,
+		Response: "Internal Server Error",
+	}
+	errMsg := ""
+
+	_, isAdminExists := c.Get("admin")
+
+	if !isAdminExists {
+		response.Code = http.StatusUnauthorized
+		response.Response = "Unauthorized"
+	} else {
+		bodyRaw, err := c.GetRawData()
+
+		if err != nil {
+			response.Code = http.StatusInternalServerError
+			response.Response = "Internal Server Error"
+			errMsg = fmt.Sprintf("RegisterToken Get Body Request Failed:\n%v", err)
+		}
+
+		var bodyData map[string]interface{}
+		json.Unmarshal(bodyRaw, &bodyData)
+
+		if bodyData["privilege"] == nil || (bodyData["privilege"] != "readOnly" && bodyData["privilege"] != "readAndWrite") {
+			response.Code = http.StatusBadRequest
+			response.Response = "Bad Request"
+		} else {
+			var expireAfterSeconds int32 = 43200
+			createIndexRes, err := registerTokenInterface.IndexesReplaceOne(os.Getenv("PROJECT_NAME"), "registerToken", mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
+			if err != nil {
+				response.Code = http.StatusInternalServerError
+				response.Response = "Internal Server Error"
+				errMsg = fmt.Sprintf("RegisterToken CreateIndex Failed:\n%v", err)
+			} else {
+				Log.Printf("RegisterToken CreateIndex Response: %v", createIndexRes)
+
+				registerToken := func() string {
+					b := make([]byte, 8)
+					rand.Read(b)
+					return fmt.Sprintf("%x", b)
+				}()
+
+				res, err := registerTokenInterface.InsertOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
+					{
+						Key: "createdAt", Value: time.Now(),
+					},
+					{
+						Key: "token", Value: registerToken,
+					},
+					{
+						Key: "privilege", Value: bodyData["privilege"],
+					},
+				})
+
+				if err != nil {
+					response.Code = http.StatusInternalServerError
+					response.Response = "Internal Server Error"
+					errMsg = fmt.Sprintf("RegisterToken InsertOne Failed:\n%v", err)
+				}
+				Log.Printf("RegisterToken InsertOne Respone: %v", res)
+
+				response.Code = http.StatusCreated
+				response.Response = gin.H{
+					"token": registerToken,
+				}
+			}
+		}
+	}
+
+	c.JSON(response.Code, response.Response)
+	if errMsg != "" {
+		Log.Panic(errMsg)
+	}
+}
+
+func RegisterToken(c *gin.Context) {
+	repo := db.MongoDB{}
+	cntrl := RegisterTokenController{}
+
+	cntrl.TryRegisterToken(c, repo)
 }

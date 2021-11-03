@@ -1,20 +1,39 @@
 package ApiUsers
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"log"
+	"net/http"
+	"net/mail"
 	"os"
-	"time"
+	"regexp"
 
 	"github.com/gin-gonic/gin"
+	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	Log "github.com/laxamore/mineralos/log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-func Register(c *gin.Context) {
+type RegisterRepositoryInterface interface {
+	FindOne(string, string, interface{}) map[string]interface{}
+	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
+	DeleteOne(string, string, interface{}) (*mongo.DeleteResult, error)
+	IndexesReplaceMany(string, string, []mongo.IndexModel) ([]string, error)
+}
+
+type RegisterController struct{}
+
+func (a RegisterController) TryRegister(c *gin.Context, registerRepository RegisterRepositoryInterface) {
+	var response api.Result
+	response.Code = http.StatusBadRequest
+	response.Response = "Bad Request"
+
+	errMsg := ""
 	_, registerAdmin := c.Get("registerAdmin")
 	tokenInfo := c.GetStringMap("token")
 	bodyData := c.GetStringMap("bodyData")
@@ -29,66 +48,128 @@ func Register(c *gin.Context) {
 		privilege = "admin"
 	}
 
-	hasher := sha256.New()
-	hasher.Write([]byte(fmt.Sprintf("%s", bodyData["password"])))
-	sha256_hash := hex.EncodeToString(hasher.Sum(nil))
+	_, err := mail.ParseAddress(fmt.Sprintf("%s", bodyData["email"]))
+	isEmailValid := (err == nil)
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	client, err := db.MongoClient(ctx)
-	defer cancel()
+	regexUsername := regexp.MustCompile(`^[a-zA-Z0-9_-]{4,20}$`)
+	correctUsername := regexUsername.Match([]byte(fmt.Sprintf("%s", bodyData["username"])))
+	corectPasswordLength := (len(fmt.Sprintf("%s", bodyData["password"])) >= 8)
 
-	if err != nil {
-		log.Panicf("Register DB Connection Error:\n%v", err)
-	}
+	if isEmailValid && corectPasswordLength && correctUsername {
+		hasher := sha256.New()
+		hasher.Write([]byte(fmt.Sprintf("%s", bodyData["password"])))
+		sha256_hash := hex.EncodeToString(hasher.Sum(nil))
 
-	var result map[string]interface{}
-	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("users")
-	collection.FindOne(ctx, bson.D{
-		{
-			Key: "email", Value: bodyData["email"],
-		},
-	}).Decode(&result)
-
-	if len(result) == 0 {
-		collection = client.Database(os.Getenv("PROJECT_NAME")).Collection("users")
-		res, err := collection.InsertOne(ctx, bson.D{
+		// Create/Replace MongoDB Indexes For Unique Username & Email
+		isUnique := true
+		createIndexRes, err := registerRepository.IndexesReplaceMany(os.Getenv("PROJECT_NAME"), "users", []mongo.IndexModel{
 			{
-				Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
-			}, {
-				Key: "email", Value: fmt.Sprintf("%s", bodyData["email"]),
-			}, {
-				Key: "password", Value: sha256_hash,
+				Keys: bson.D{
+					{Key: "username", Value: 1},
+				},
+				Options: &options.IndexOptions{
+					Unique: &isUnique,
+				},
 			},
 			{
-				Key: "privilege", Value: privilege,
+				Keys: bson.D{
+					{Key: "email", Value: 1},
+				},
+				Options: &options.IndexOptions{
+					Unique: &isUnique,
+				},
 			},
 		})
 
 		if err != nil {
-			log.Panicf("Register InsertOne Failed:\n%v", err)
+			response.Code = http.StatusInternalServerError
+			response.Response = "InternalServerError"
+			errMsg = "failed to create/replace username indexes."
+		} else {
+			Log.Printf("Username CreateIndex/ReplaceIndex Response: %v", createIndexRes)
 		}
-		log.Printf("Register InsertOne Respone: %v", res)
+		//
 
-		c.JSON(200, gin.H{
-			"msg":  bodyData,
-			"hash": sha256_hash,
-		})
-
-		if tokenInfo != nil {
-			collection = client.Database(os.Getenv("PROJECT_NAME")).Collection("registerToken")
-			_, err := collection.DeleteOne(ctx, bson.D{
-				{
-					Key: "token", Value: fmt.Sprintf("%s", tokenInfo["token"]),
-				},
-			})
-
-			if err != nil {
-				log.Panicf("Register DeleteOne Error:\n%v", err)
+		// Check Users & Email Already Exists
+		result := map[string]interface{}{}
+		checkIndex := []string{
+			"username",
+			"email",
+		}
+		for _, check := range checkIndex {
+			if len(result) == 0 {
+				result = registerRepository.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+					{
+						Key: check, Value: fmt.Sprintf("%s", bodyData[check]),
+					},
+				})
+			} else {
+				break
 			}
+		}
+		//
+
+		if len(result) == 0 {
+			if tokenInfo != nil {
+				// Delete Register Token
+				_, err := registerRepository.DeleteOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
+					{
+						Key: "token", Value: fmt.Sprintf("%s", tokenInfo["token"]),
+					},
+				})
+				Log.Printf("%v", err)
+				//
+
+				if err != nil {
+					response.Code = http.StatusNotFound
+					response.Response = "RegisterToken Not Found"
+					errMsg = fmt.Sprintf("Register DeleteOne Error:\n%v", err)
+				} else {
+					// Register New User
+					res, err := registerRepository.InsertOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+						{
+							Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
+						}, {
+							Key: "email", Value: fmt.Sprintf("%s", bodyData["email"]),
+						}, {
+							Key: "password", Value: sha256_hash,
+						},
+						{
+							Key: "privilege", Value: privilege,
+						},
+					})
+
+					if err != nil {
+						response.Code = http.StatusBadRequest
+						response.Response = "Register Failed Bad Request"
+						errMsg = fmt.Sprintf("Register InsertOne Failed:\n%v", err)
+					} else {
+						response.Code = http.StatusOK
+						response.Response = gin.H{
+							"msg":  bodyData,
+							"hash": sha256_hash,
+						}
+						log.Printf("Register InsertOne Respone: %v", res)
+					}
+					//
+				}
+			}
+		} else {
+			response.Code = http.StatusConflict
+			response.Response = "User Already Exists."
+			errMsg = "User Already Exists."
 		}
 	}
 
-	c.JSON(409, gin.H{
-		"msg": "User Already Exists.",
-	})
+	c.JSON(response.Code, response.Response)
+	if errMsg != "" {
+		Log.Panic(errMsg)
+	}
+}
+
+func Register(c *gin.Context) {
+	repo := db.MongoDB{}
+	cntrl := RegisterController{}
+
+	cntrl.TryRegister(c, repo)
 }

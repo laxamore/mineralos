@@ -2,11 +2,11 @@ package Middleware
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	Log "github.com/laxamore/mineralos/log"
+	"github.com/laxamore/mineralos/utils/JWT"
+	"github.com/laxamore/mineralos/utils/Log"
 )
 
 type VerifyAdminController struct{}
@@ -15,10 +15,7 @@ func (a VerifyAdminController) TryVerifyAdmin(c *gin.Context) {
 	c.Set("admin", false)
 	token := c.GetHeader("Token")
 
-	claims := jwt.MapClaims{}
-	tokenParsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
-	})
+	claims, tokenParsed, err := JWT.VerifyJWT(token)
 
 	if tokenParsed == nil || err != nil {
 		Log.Printf("Couldn't handle this token: %v", err)

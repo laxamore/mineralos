@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type LoginRepositoryMock struct {
@@ -20,7 +21,9 @@ type LoginRepositoryMock struct {
 }
 
 func (r LoginRepositoryMock) FindOne(db_name string, collection_name string, filter interface{}) map[string]interface{} {
+	ObjectID, _ := primitive.ObjectIDFromHex("61866b3920b512a8608788ad")
 	users := map[string]interface{}{
+		"_id":       ObjectID,
 		"username":  "test",
 		"email":     "test@test.com",
 		"password":  "937e8d5fbb48bd4949536cd65b8d35c426b80d2f830c5c308e2cdec422ae2244",

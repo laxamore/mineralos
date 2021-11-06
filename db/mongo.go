@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	Log "github.com/laxamore/mineralos/log"
+	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"

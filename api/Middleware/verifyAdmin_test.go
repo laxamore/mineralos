@@ -2,15 +2,14 @@ package Middleware
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"net/http/httptest"
-	"os"
 	"testing"
 	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
+	"github.com/laxamore/mineralos/utils/JWT"
 	"github.com/stretchr/testify/require"
 )
 
@@ -50,15 +49,8 @@ func TestVerifyAdmin(t *testing.T) {
 				"username":  "test",
 				"email":     "test@test.com",
 				"privilege": td.userPrivilege,
-				"exp":       time.Now().Unix() + 5,
-				"iat":       time.Now().Unix(),
 			}
-
-			log.Print(time.Now().Unix())
-
-			signToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-			token, err := signToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
-
+			token, err := JWT.SignJWT(claims, time.Now().Unix()+5)
 			if err != nil {
 				t.Fatalf("Login Token Sign Failed:\n%v", err)
 			}

@@ -5,7 +5,6 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"time"
 
@@ -13,7 +12,10 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils/JWT"
+	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type LoginRepositoryInterface interface {
@@ -27,7 +29,7 @@ func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepos
 	bodyRaw, err := c.GetRawData()
 
 	if err != nil {
-		log.Panicf("Login Get Body Request Failed:\n%v", err)
+		Log.Panicf("Login Get Body Request Failed:\n%v", err)
 	}
 
 	var bodyData map[string]interface{}
@@ -47,27 +49,36 @@ func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepos
 	})
 
 	if len(result) != 0 {
-		// Create the Claims
+		exp := time.Now().Unix() + 300
+		expRT := time.Now().Unix() + 2592000 // 1 Month Expired
+
+		// Create the Claims for token
 		claims := jwt.MapClaims{
 			"username":  result["username"],
 			"email":     result["email"],
 			"privilege": result["privilege"],
-			"exp":       time.Now().Unix() + 2592000, // Expired After 1 Month
-			"iat":       time.Now().Unix(),
 		}
+		token, err := JWT.SignJWT(claims, exp)
+		if err != nil {
+			Log.Panicf("Login Token Sign Failed:\n%v", err)
+		}
+		//
 
-		log.Print(time.Now().Unix())
-
-		signToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		token, err := signToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
+		// Create the claims for refresh token
+		claims = jwt.MapClaims{
+			"id": result["_id"].(primitive.ObjectID).Hex(),
+		}
+		rtoken, err := JWT.SignJWT(claims, expRT)
 
 		if err != nil {
-			log.Panicf("Login Token Sign Failed:\n%v", err)
+			Log.Panicf("Login Token Sign Failed:\n%v", err)
 		}
 
 		response.Code = 200
 		response.Response = gin.H{
-			"jwt": token,
+			"jwt_token":        token,
+			"jwt_token_expiry": exp,
+			"r_token":          rtoken,
 		}
 	} else {
 		response.Code = 401

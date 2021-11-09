@@ -1,7 +1,6 @@
 package Middleware
 
 import (
-	"encoding/json"
 	"net/http"
 	"os"
 
@@ -20,38 +19,28 @@ type BeforeRegisterController struct{}
 
 func (a BeforeRegisterController) TryBeforeRegister(c *gin.Context, repositoryInterface BeforeRegisterRepositoryInterface) {
 	c.Set("token", nil)
-	bodyRaw, err := c.GetRawData()
+	regToken := c.GetHeader("regToken")
+
+	results, err := repositoryInterface.Find(os.Getenv("PROJECT_NAME"), "users", bson.D{{}})
+	// Log.Printf("%v", len(results))
 
 	if err != nil {
-		Log.Panicf("BeforeRegister Get Body Request Failed:\n%v", err)
+		Log.Panicf("BeforeRegister List All Users Failed:\n%v", err)
 	}
 
-	var bodyData map[string]interface{}
-	json.Unmarshal(bodyRaw, &bodyData)
-	c.Set("bodyData", bodyData)
+	if len(results) > 0 {
+		result := repositoryInterface.FindOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{{Key: "token", Value: regToken}})
+		// Log.Printf("%v", result)
 
-	if bodyData["username"] != nil && bodyData["email"] != nil && bodyData["password"] != nil {
-		results, err := repositoryInterface.Find(os.Getenv("PROJECT_NAME"), "users", bson.D{{}})
-
-		if err != nil {
-			Log.Panicf("BeforeRegister List All Users Failed:\n%v", err)
+		if len(result) > 0 {
+			c.Set("token", result)
+			c.Writer.WriteHeader(http.StatusOK)
+			return
 		}
-
-		if len(results) > 0 {
-			if bodyData["token"] != nil {
-				result := repositoryInterface.FindOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{{Key: "token", Value: bodyData["token"]}})
-
-				Log.Printf("%v", result)
-
-				if len(result) > 0 {
-					c.Set("token", result)
-					c.Writer.WriteHeader(http.StatusOK)
-					return
-				}
-			}
-		} else {
-			c.Set("registerAdmin", true)
-		}
+	} else {
+		c.Set("registerAdmin", true)
+		c.Writer.WriteHeader(http.StatusOK)
+		return
 	}
 
 	c.Abort()

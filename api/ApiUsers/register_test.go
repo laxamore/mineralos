@@ -1,8 +1,11 @@
 package ApiUsers
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -87,7 +90,6 @@ func TestRegister(t *testing.T) {
 				"username": "test",
 				"email":    "test@test.com",
 				"password": "test1234",
-				"token":    "testtesttesttest",
 			},
 			token: map[string]interface{}{
 				"createdAt": time.Now(),
@@ -102,7 +104,6 @@ func TestRegister(t *testing.T) {
 				"username": "test",
 				"email":    "test@test.com",
 				"password": "test1234",
-				"token":    "",
 			},
 			token: map[string]interface{}{
 				"createdAt": time.Now(),
@@ -117,7 +118,6 @@ func TestRegister(t *testing.T) {
 				"username": "testexist",
 				"email":    "test@test.com",
 				"password": "test1234",
-				"token":    "testtesttesttest",
 			},
 			token: map[string]interface{}{
 				"createdAt": time.Now(),
@@ -132,7 +132,6 @@ func TestRegister(t *testing.T) {
 				"username": "test",
 				"email":    "test@testexist.com",
 				"password": "test1234",
-				"token":    "testtesttesttest",
 			},
 			token: map[string]interface{}{
 				"createdAt": time.Now(),
@@ -147,7 +146,6 @@ func TestRegister(t *testing.T) {
 				"username": "test",
 				"email":    "testemail.com",
 				"password": "test1234",
-				"token":    "testtesttesttest",
 			},
 			token: map[string]interface{}{
 				"createdAt": time.Now(),
@@ -162,7 +160,6 @@ func TestRegister(t *testing.T) {
 				"username": "!@test",
 				"email":    "testemail.com",
 				"password": "test1234",
-				"token":    "testtesttesttest",
 			},
 			token: map[string]interface{}{
 				"createdAt": time.Now(),
@@ -177,7 +174,6 @@ func TestRegister(t *testing.T) {
 				"username": "test",
 				"email":    "testemail.com",
 				"password": "test123",
-				"token":    "testtesttesttest",
 			},
 			token: map[string]interface{}{
 				"createdAt": time.Now(),
@@ -197,8 +193,13 @@ func TestRegister(t *testing.T) {
 				Header: make(http.Header),
 			}
 
-			c.Set("bodyData", td.bodyData)
 			c.Set("token", td.token)
+
+			jsonbytes, err := json.Marshal(td.bodyData)
+			if err != nil {
+				panic(err)
+			}
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
 
 			repo := RegisterRepositoryMock{}
 			cntrl := RegisterController{}

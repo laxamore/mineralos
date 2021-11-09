@@ -8,7 +8,7 @@ const Login: NextPage = () => {
   }, [])
 
   return (
-    <div >
+    <div className="w-full h-full absolute top-0 left-0">
     </div>
   )
 }

@@ -77,11 +77,11 @@ func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepos
 		}
 
 		http.SetCookie(c.Writer, &http.Cookie{
-			Name:   "rtoken",
-			Value:  url.QueryEscape(rtoken),
-			MaxAge: 2592000,
-			Path:   "/api/v1/refreshToken",
-			// Domain:   os.Getenv("domain"),
+			Name:     "rtoken",
+			Value:    url.QueryEscape(rtoken),
+			MaxAge:   2592000,
+			Path:     "/api/v1/refreshToken",
+			Domain:   os.Getenv("domain"),
 			SameSite: http.SameSiteStrictMode,
 			Secure:   true,
 			HttpOnly: true,

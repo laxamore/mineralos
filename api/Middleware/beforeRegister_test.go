@@ -1,10 +1,7 @@
 package Middleware
 
 import (
-	"bytes"
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -31,7 +28,7 @@ func (a BeforeRegisterRepositoryMock) Find(db_name string, collection_name strin
 	}
 
 	if a.emptyUsers {
-		return []map[string]interface{}{{}}, nil
+		return []map[string]interface{}{}, nil
 	}
 	return dumyUsers, nil
 }
@@ -45,6 +42,8 @@ func (a BeforeRegisterRepositoryMock) FindOne(db_name string, collection_name st
 	filterbytes, _ := bson.Marshal(filter)
 	bson.Unmarshal(filterbytes, &input)
 
+	// Log.Printf("%s", input["token"])
+
 	if input["token"] == token["token"] {
 		return token
 	}
@@ -55,7 +54,7 @@ func TestBeforeRegister(t *testing.T) {
 	type TestData struct {
 		testName     string
 		expectedCode int
-		bodyData     map[string]interface{}
+		regToken     string
 		emptyUsers   bool
 	}
 
@@ -63,35 +62,20 @@ func TestBeforeRegister(t *testing.T) {
 		{
 			testName:     "SuccesBeforeRegister",
 			expectedCode: http.StatusOK,
-			bodyData: map[string]interface{}{
-				"username": "test",
-				"email":    "test@test.com",
-				"password": "test1234",
-				"token":    "testtesttesttest",
-			},
-			emptyUsers: false,
+			regToken:     "testtesttesttest",
+			emptyUsers:   false,
 		},
 		{
 			testName:     "SuccesBeforeRegisterAdmin",
 			expectedCode: http.StatusOK,
-			bodyData: map[string]interface{}{
-				"username": "test",
-				"email":    "test@test.com",
-				"password": "test1234",
-				"token":    "testtesttesttest",
-			},
-			emptyUsers: true,
+			regToken:     "",
+			emptyUsers:   true,
 		},
 		{
 			testName:     "FailedBeforeRegister",
 			expectedCode: http.StatusUnauthorized,
-			bodyData: map[string]interface{}{
-				"username": "test",
-				"email":    "test@test.com",
-				"password": "test1234",
-				"token":    "testtesttesttess",
-			},
-			emptyUsers: true,
+			regToken:     "testtesttesttess",
+			emptyUsers:   false,
 		},
 	}
 
@@ -105,11 +89,7 @@ func TestBeforeRegister(t *testing.T) {
 				Header: make(http.Header),
 			}
 
-			jsonbytes, err := json.Marshal(td.bodyData)
-			if err != nil {
-				panic(err)
-			}
-			c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
+			c.Request.Header.Add("regToken", td.regToken)
 
 			repo := BeforeRegisterRepositoryMock{}
 			cntrl := BeforeRegisterController{}

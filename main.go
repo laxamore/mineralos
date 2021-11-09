@@ -29,6 +29,7 @@ func main() {
 	router.POST("/api/v1/login", ApiUsers.Login)
 	router.POST("/api/v1/refreshToken", ApiUsers.RefreshToken)
 	router.GET("/api/v1/hello", Middleware.CheckAuth, ApiRigs.Hello)
+	router.POST("/api/v1/logout", Middleware.CheckAuth, ApiUsers.Logout)
 
 	router.Run(":5000")
 }

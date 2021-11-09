@@ -28,7 +28,7 @@ func (a RefreshTokenController) TryRefreshToken(c *gin.Context, repositoryInterf
 		Response: "Bad Request",
 	}
 
-	rtoken := c.GetHeader("rt")
+	rtoken, _ := c.Cookie("rtoken")
 
 	if rtoken != "" {
 		claims, tokenParsed, err := JWT.VerifyJWT(rtoken)
@@ -67,14 +67,6 @@ func (a RefreshTokenController) TryRefreshToken(c *gin.Context, repositoryInterf
 				}
 				c.JSON(response.Code, response.Response)
 				return
-			}
-		} else if ve, ok := err.(*jwt.ValidationError); ok {
-			if ve.Errors&jwt.ValidationErrorMalformed != 0 {
-				Log.Print("Couldn't handle this token")
-			} else if ve.Errors&(jwt.ValidationErrorExpired|jwt.ValidationErrorNotValidYet) != 0 {
-				Log.Print("Token Expired.")
-			} else {
-				Log.Printf("Couldn't handle this token: %v", err)
 			}
 		} else {
 			Log.Printf("Couldn't handle this token: %v", err)

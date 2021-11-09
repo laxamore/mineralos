@@ -83,7 +83,7 @@ func TestRefreshToken(t *testing.T) {
 			}
 			//
 
-			c.Request.Header.Set("rt", rtoken)
+			c.Request.Header.Set("Cookie", "rtoken="+rtoken)
 
 			repo := RefreshTokenRepositoryMock{}
 			cntrl := RefreshTokenController{}

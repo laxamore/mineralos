@@ -5,6 +5,8 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
+	"net/url"
 	"os"
 	"time"
 
@@ -74,11 +76,22 @@ func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepos
 			Log.Panicf("Login Token Sign Failed:\n%v", err)
 		}
 
+		http.SetCookie(c.Writer, &http.Cookie{
+			Name:   "rtoken",
+			Value:  url.QueryEscape(rtoken),
+			MaxAge: 2592000,
+			Path:   "/api/v1/refreshToken",
+			// Domain:   os.Getenv("domain"),
+			SameSite: http.SameSiteStrictMode,
+			Secure:   true,
+			HttpOnly: true,
+		})
+
 		response.Code = 200
 		response.Response = gin.H{
 			"jwt_token":        token,
 			"jwt_token_expiry": exp,
-			"r_token":          rtoken,
+			// "r_token":          rtoken,
 		}
 	} else {
 		response.Code = 401

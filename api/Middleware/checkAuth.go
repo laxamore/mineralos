@@ -15,12 +15,13 @@ func CheckAuth(c *gin.Context) {
 	if bearerToken != "" {
 		token := strings.Split(bearerToken, " ")[1]
 
-		_, tokenParsed, err := JWT.VerifyJWT(token)
+		tokenClaims, tokenParsed, err := JWT.VerifyJWT(token)
 
 		if tokenParsed == nil || err != nil {
 			Log.Printf("Couldn't handle this token: %v", err)
 		} else if tokenParsed.Valid {
 			Log.Print("Token Valid")
+			c.Set("tokenClaims", tokenClaims)
 			c.Writer.WriteHeader(http.StatusOK)
 			return
 		} else {

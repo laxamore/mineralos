@@ -1,58 +1,73 @@
 package ApiRigs
 
 import (
-	"context"
 	"encoding/json"
-	"log"
+	"fmt"
+	"net/http"
 	"os"
-	"time"
 
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils/Log"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func DeleteRig(c *gin.Context) {
-	result := api.Result{
-		Code: 400,
-		Response: map[string]interface{}{
-			"msg": "delete failed",
-		},
-	}
+type DeleteRigRepositoryInterface interface {
+	DeleteOne(string, string, interface{}) (*mongo.DeleteResult, error)
+}
 
+type DeleteRigController struct{}
+
+func (a DeleteRigController) TryDeleteRig(c *gin.Context, repositoryInterface DeleteRigRepositoryInterface) {
+	response := api.Result{
+		Code:     http.StatusForbidden,
+		Response: "forbidden",
+	}
 	bodyByte, err := c.GetRawData()
 
 	if err != nil {
-		log.Panicf("DeleteRig Get Body Request Failed:\n%v", err)
+		Log.Printf("newrig get body request failed:\n%v", err)
+	} else {
+		var bodyData map[string]interface{}
+		json.Unmarshal(bodyByte, &bodyData)
+
+		res, _ := c.Get("tokenClaims")
+		tokenClaimsByte, err := json.Marshal(res)
+
+		if err != nil {
+			Log.Printf("error marshal tokenClaims %v", err)
+		} else {
+			var tokenClaims map[string]interface{}
+			json.Unmarshal(tokenClaimsByte, &tokenClaims)
+
+			if tokenClaims["privilege"] == "admin" || tokenClaims["privilege"] == "readAndWrite" {
+				_, err = repositoryInterface.DeleteOne(os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+					{
+						Key: "rig_id", Value: fmt.Sprintf("%s", bodyData["rig_id"]),
+					},
+				})
+
+				if err != nil {
+					response.Code = http.StatusNotFound
+					response.Response = "rig id not found"
+					Log.Printf("error creating new rig %v", err)
+				} else {
+					response.Code = http.StatusOK
+					response.Response = "delete success"
+				}
+			}
+		}
 	}
 
-	var bodyData map[string]interface{}
-	json.Unmarshal(bodyByte, &bodyData)
+	c.JSON(response.Code, response.Response)
+}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	client, err := db.MongoClient(ctx)
-	defer cancel()
+func DeleteRig(c *gin.Context) {
+	repo := db.MongoDB{}
+	cntrl := DeleteRigController{}
 
-	if err != nil {
-		log.Panicf("DB Connection Error:\n%v", err)
-	}
-
-	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("rigs")
-
-	_, err = collection.DeleteOne(ctx, bson.D{{
-		Key: "rig_id", Value: bodyData["rig_id"],
-	}})
-
-	if err != nil {
-		log.Panicf("Delete RIG Error:\n%v", err)
-	}
-
-	result.Code = 200
-	result.Response = map[string]interface{}{
-		"msg": "delete success",
-	}
-
-	c.JSON(result.Code, result.Response)
+	cntrl.TryDeleteRig(c, repo)
 }

@@ -1,51 +1,83 @@
 package ApiRigs
 
 import (
-	"context"
-	"log"
+	"encoding/json"
+	"fmt"
+	"net/http"
 	"os"
-	"time"
 
+	"github.com/google/uuid"
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils/Log"
 
 	"github.com/gin-gonic/gin"
-	"github.com/google/uuid"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
-func NewRig(c *gin.Context) {
-	result := api.Result{
-		Code: 400,
+type NewRigRepositoryInterface interface {
+	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
+}
+
+type NewRigController struct{}
+
+func (a *NewRigController) TryNewRig(c *gin.Context, repositoryInterface NewRigRepositoryInterface) {
+	response := api.Result{
+		Code: http.StatusForbidden,
 		Response: map[string]interface{}{
 			"rig_id": nil,
 		},
 	}
 
-	newUUID := uuid.New()
-
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	client, err := db.MongoClient(ctx)
-	defer cancel()
+	bodyByte, err := c.GetRawData()
 
 	if err != nil {
-		log.Panicf("DB Connection Error:\n%v", err)
+		Log.Printf("newrig get body request failed:\n%v", err)
+	} else {
+		var bodyData map[string]interface{}
+		json.Unmarshal(bodyByte, &bodyData)
+
+		res, _ := c.Get("tokenClaims")
+		tokenClaimsByte, err := json.Marshal(res)
+
+		if err != nil {
+			Log.Printf("error marshal tokenClaims %v", err)
+		} else {
+			var tokenClaims map[string]interface{}
+			json.Unmarshal(tokenClaimsByte, &tokenClaims)
+
+			if tokenClaims["privilege"] == "admin" || tokenClaims["privilege"] == "readAndWrite" {
+
+				newUUID := uuid.New()
+
+				_, err = repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+					{
+						Key: "rig_id", Value: newUUID.String(),
+					},
+					{
+						Key: "rig_name", Value: fmt.Sprintf("%s", bodyData["rig_name"]),
+					},
+				})
+
+				if err != nil {
+					Log.Printf("error creating new rig %v", err)
+				} else {
+					response.Code = http.StatusOK
+					response.Response = gin.H{
+						"rig_id": newUUID,
+					}
+				}
+			}
+		}
 	}
 
-	collection := client.Database(os.Getenv("PROJECT_NAME")).Collection("rigs")
+	c.JSON(response.Code, response.Response)
+}
 
-	_, err = collection.InsertOne(ctx, bson.D{{
-		Key: "rig_id", Value: newUUID.String(),
-	}})
+func NewRig(c *gin.Context) {
+	repo := db.MongoDB{}
+	cntrl := NewRigController{}
 
-	if err != nil {
-		log.Panicf("Create New RIG Error:\n%v", err)
-	}
-
-	result.Code = 200
-	result.Response = map[string]interface{}{
-		"rig_id": newUUID.String(),
-	}
-
-	c.JSON(result.Code, result.Response)
+	cntrl.TryNewRig(c, repo)
 }

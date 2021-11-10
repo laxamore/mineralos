@@ -22,7 +22,7 @@ const Navbar: NextPage = () => {
         })
     }
 
-    return <div className="flex flex-row items-center w-full absolute top-0 left-0 h-14 bg-gray-700 text-gray-200">
+    return <div className="sticky flex flex-row items-center w-full top-0 left-0 h-14 bg-gray-700 text-gray-200">
         <span className="px-8 font-extrabold text-xl">MineralOS</span>
         <ul className={`flex flex-row justify-end w-full mx-16 font-bold ${styles.menu}`}>
             <li>Rigs</li>
@@ -30,7 +30,7 @@ const Navbar: NextPage = () => {
             <li>Wallets</li>
             <li>Settings</li>
         </ul>
-        <span className="px-8 font-extrabold text-red-600 hover:text-red-500 cursor-pointer" onClick={logoutHandler}>Logout</span>
+        <span className="px-8 font-extrabold text-red-500 hover:text-red-600 cursor-pointer" onClick={logoutHandler}>Logout</span>
     </div>
 }
 

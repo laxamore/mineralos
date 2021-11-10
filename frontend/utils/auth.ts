@@ -83,3 +83,8 @@ export function clearAuthToken() {
         jwt_token_expiry: 0
     }
 }
+
+export function getAuthPayload() {
+    const encodedPayload = inMemoryToken.jwt_token.split('.')[1]
+    return JSON.parse(Buffer.from(encodedPayload, 'base64').toString())
+}

@@ -20,7 +20,10 @@ type NewRigRepositoryMock struct {
 }
 
 func (a NewRigRepositoryMock) InsertOne(db_name string, collection_name string, fitler interface{}) (*mongo.InsertOneResult, error) {
-	return nil, nil
+	InsertID := mongo.InsertOneResult{
+		InsertedID: "testinsertid",
+	}
+	return &InsertID, nil
 }
 
 func TestNewRig(t *testing.T) {

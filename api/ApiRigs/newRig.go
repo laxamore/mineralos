@@ -51,7 +51,7 @@ func (a *NewRigController) TryNewRig(c *gin.Context, repositoryInterface NewRigR
 
 				newUUID := uuid.New()
 
-				_, err = repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+				insertResultID, err := repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "rigs", bson.D{
 					{
 						Key: "rig_id", Value: newUUID.String(),
 					},
@@ -65,7 +65,9 @@ func (a *NewRigController) TryNewRig(c *gin.Context, repositoryInterface NewRigR
 				} else {
 					response.Code = http.StatusOK
 					response.Response = gin.H{
-						"rig_id": newUUID,
+						"_id":      insertResultID.InsertedID,
+						"rig_name": fmt.Sprintf("%s", bodyData["rig_name"]),
+						"rig_id":   newUUID,
 					}
 				}
 			}

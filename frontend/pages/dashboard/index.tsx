@@ -1,9 +1,10 @@
 import type { GetServerSideProps, NextPage } from 'next'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { checkAuth, withAuth, jwtObject, getAuthPayload } from "../../utils/auth"
 
 import Navbar from '../../components/navbar'
 import CreateRigModal from '../../components/modals/createRigModal'
+import { Column, useTable } from 'react-table'
 
 const isServer = () => typeof window === 'undefined';
 
@@ -17,6 +18,28 @@ const Dashboard: NextPage<Props> = ({ data }) => {
     const [showCreateRigModal, setShowCreateRigModal] = useState(false);
     const [rigsData, setRigsData] = useState([]);
 
+    const rigsDataTable = useMemo(() => rigsData, [rigsData])
+    interface rigsColumnInterface {
+        rig_name: string,
+        hashrate: string,
+        units: string,
+    }
+
+    const columns = useMemo<Column<rigsColumnInterface>[]>(() => [
+        {
+            Header: 'rig_name',
+            accessor: 'rig_name',
+        },
+        {
+            Header: 'hashrate',
+            accessor: 'hashrate'
+        },
+        {
+            Header: 'units',
+            accessor: 'units',
+        }
+    ], []);
+
     useEffect(() => {
         checkAuth().then(auth => {
             if (auth) {
@@ -28,6 +51,11 @@ const Dashboard: NextPage<Props> = ({ data }) => {
         setRigsData(data.rigs)
     }, [])
 
+    const tableInstance = useTable({ columns: columns, data: rigsDataTable })
+    const {
+        rows,
+    } = tableInstance
+
     return (
         <div>
             {isAuth ?
@@ -37,18 +65,22 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                         <div className="justify-start flex flex-col w-3/4 m-24 bg-gray-700 text-white rounded-2xl">
                             <div className="flex flex-row p-4 border-b-2 border-blue-700">
                                 <button className={`p-2 bg-blue-600 rounded-lg ${privilege === 'admin' || privilege === 'readAndWrite' ? 'hover:bg-blue-700' : 'opacity-50 cursor-default'}`}
-                                    onClick={() => setShowCreateRigModal(true)}
+                                    onClick={() => {
+                                        console.log(rigsData)
+                                        console.log(rows)
+                                        setShowCreateRigModal(true)
+                                    }}
                                     disabled={privilege === 'admin' || privilege === 'readAndWrite' ? false : true}>
                                     Create New Rig
                                 </button>
                             </div>
                             <ul className="mt-2">
                                 {
-                                    rigsData.map((val: any) => {
-                                        return <li className="border border-green-600 p-3 rounded-2xl cursor-pointer mt-2" key={val.rig_id}>
+                                    rows.map((val: any) => {
+                                        return <li className="border border-green-600 p-3 rounded-2xl cursor-pointer mt-2" key={val.original.rig_id}>
                                             <div className="flex flex-row items-center">
                                                 <div className="w-1/6">
-                                                    <p className="text-lg font-bold">{val.rig_name}</p>
+                                                    <p className="text-lg font-bold">{val.original.rig_name}</p>
                                                     <p className="text-sm">0 -/s</p>
                                                 </div>
                                                 <div className="rounded-lg py-2 mx-2 w-5/6 h-12 bg-gray-800">
@@ -62,7 +94,7 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                                                                     method: 'DELETE',
                                                                     mode: 'cors',
                                                                     body: JSON.stringify({
-                                                                        rig_id: val.rig_id,
+                                                                        rig_id: val.original.rig_id,
                                                                     }),
                                                                     headers: {
                                                                         Authorization: `Bearer ${token.jwt_token}`,
@@ -70,7 +102,7 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                                                                 })
 
                                                                 if (response.status == 200) {
-                                                                    console.log(await response.json())
+                                                                    setRigsData(rigsData.filter((rig: any) => rig.rig_id != val.original.rig_id))
                                                                 }
                                                             })
                                                         }}>X</button>
@@ -84,7 +116,9 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                     </div>
 
                     {showCreateRigModal ?
-                        <CreateRigModal setShowModal={setShowCreateRigModal} /> : null
+                        <CreateRigModal setShowModal={setShowCreateRigModal} createRigSuccessHandler={(res: never) => {
+                            setRigsData([...rigsData, res])
+                        }} /> : null
                     }
                 </>
                 :
@@ -119,7 +153,6 @@ export const getServerSideProps: GetServerSideProps = async (ctx: any) => {
     }
 
     const data: any = await getRigsData()
-
     return { props: { data } }
 }
 

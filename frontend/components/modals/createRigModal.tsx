@@ -1,14 +1,14 @@
-import { Http2ServerRequest } from "http2"
 import { Dispatch, FC, FormEvent, SetStateAction } from "react"
-import { json } from "stream/consumers"
 import { jwtObject, withAuth } from "../../utils/auth"
 import Modal from "./modal"
 
 type Props = {
     setShowModal: Dispatch<SetStateAction<boolean>>
+    createRigSuccessHandler?: Function
+    createRigFailedHandler?: Function
 }
 
-const CreateRigModal: FC<Props> = ({ setShowModal }) => {
+const CreateRigModal: FC<Props> = ({ setShowModal, createRigSuccessHandler, createRigFailedHandler }) => {
     return <Modal setShowModal={setShowModal}>
         <form onSubmit={(e: FormEvent<HTMLFormElement>) => {
             e.preventDefault()
@@ -31,10 +31,16 @@ const CreateRigModal: FC<Props> = ({ setShowModal }) => {
                     })
 
                     if (response.status == 200) {
-                        console.log(await response.json())
-                        setShowModal(false)
+                        const responseJSON = await response.json()
+                        if (typeof createRigSuccessHandler != 'undefined') {
+                            createRigSuccessHandler(responseJSON)
+                        }
                     }
-
+                    else {
+                        if (typeof createRigFailedHandler != 'undefined') {
+                            createRigFailedHandler()
+                        }
+                    }
                 })
             }
         }}>

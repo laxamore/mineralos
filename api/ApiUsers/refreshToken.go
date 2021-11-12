@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -48,7 +49,14 @@ func (a RefreshTokenController) TryRefreshToken(c *gin.Context, repositoryInterf
 			})
 
 			if len(result) > 0 {
-				exp := time.Now().Unix() + 300
+				exp, err := strconv.ParseInt(os.Getenv("ACCESS_TOKEN_EXPIRED"), 10, 64)
+				if err != nil {
+					Log.Printf("ACCESS_TOKEN_EXPIRED env is not number %v", err)
+				}
+				exp = exp + time.Now().Unix()
+
+				// exp = exp + time.Now().Unix()exp := time.Now().Unix() + 60
+
 				newClaims := jwt.MapClaims{
 					"username":  result["username"],
 					"email":     result["email"],

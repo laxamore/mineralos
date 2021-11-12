@@ -1,10 +1,15 @@
 import type { NextPage } from 'next'
 import Router from 'next/router'
 import { useEffect } from 'react'
+import { checkAuth } from '../utils/auth'
 
 const Login: NextPage = () => {
   useEffect(() => {
-    Router.push('/login')
+    checkAuth().then(res => {
+      if (res) {
+        Router.push("/dashboard")
+      }
+    })
   }, [])
 
   return (

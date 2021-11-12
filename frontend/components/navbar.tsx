@@ -1,9 +1,9 @@
-import type { NextPage } from "next"
 import { clearAuthToken, jwtObject, withAuth } from "../utils/auth"
 import styles from "./navbar.module.css"
 import Router from "next/router"
+import { FC } from "react"
 
-const Navbar: NextPage = () => {
+const Navbar: FC = () => {
     const logoutHandler = () => {
         withAuth(async (token: jwtObject) => {
             const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/logout`, {
@@ -28,6 +28,7 @@ const Navbar: NextPage = () => {
             <li>Rigs</li>
             <li>Overclocking</li>
             <li>Wallets</li>
+            <li>Miners</li>
             <li>Settings</li>
         </ul>
         <span className="px-8 font-extrabold text-red-500 hover:text-red-600 cursor-pointer" onClick={logoutHandler}>Logout</span>

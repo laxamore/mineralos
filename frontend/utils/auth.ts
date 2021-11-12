@@ -1,4 +1,5 @@
 import Router from 'next/router'
+import Login from '../pages';
 
 export interface jwtObject {
     jwt_token: string
@@ -21,59 +22,56 @@ export function login(jwt: { jwt_token: string, jwt_token_expiry: number }, noRe
     }
 }
 
-export function checkAuth() {
+export function checkAuth(ssr?: boolean, rtoken_cookies?: string) {
     return new Promise(async (resolve) => {
-        if (inMemoryToken.jwt_token != "") {
-            resolve(inMemoryToken)
-        }
-        else {
-            const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/refreshToken`, {
+        if ((inMemoryToken.jwt_token_expiry * 1000) < (Date.now() + 10000)) {
+            let options: RequestInit = {
                 method: 'POST',
                 mode: 'cors',
                 cache: 'no-cache',
                 credentials: 'include',
-            })
+            }
 
+            if (ssr) {
+                options.headers = {
+                    Cookie: `rtoken=${rtoken_cookies}`
+                }
+            }
+
+            const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/refreshToken`, options)
             const responseJSON = await response.json()
 
             if (responseJSON.jwt_token) {
                 inMemoryToken = responseJSON
                 resolve(inMemoryToken)
             }
-            else {
+            else if (!ssr) {
                 Router.push("/login")
             }
+            else {
+                resolve(false);
+            }
+        }
+        else {
+            resolve(inMemoryToken);
         }
     })
 }
 
-export function withAuth(handler: Function) {
-    if (inMemoryToken.jwt_token != "") {
-        const isTokenExpired = (inMemoryToken.jwt_token_expiry - Math.floor(Date.now() / 1000) - 10) < 0 ? true : false
-
-        if (isTokenExpired) {
-            fetch(`${process.env.API_ENDPOINT}/api/v1/refreshToken`, {
-                method: 'POST',
-                mode: 'cors',
-                cache: 'no-cache',
-                credentials: 'include',
-            }).then(response => {
-                response.json().then(responseJSON => {
-                    if (responseJSON.jwt_token) {
-                        inMemoryToken = responseJSON
-                        handler(inMemoryToken)
-                    }
-                    else {
-                        Router.push("/login")
-                    }
-                })
+export function withAuth(handler: Function, ssr?: boolean, rtoken_cookie?: string) {
+    if ((inMemoryToken.jwt_token_expiry * 1000) < (Date.now() + 10000)) {
+        if (!ssr) {
+            checkAuth().then(() => {
+                handler(inMemoryToken)
             })
-        } else {
-            handler(inMemoryToken)
         }
-    }
-    else {
-        Router.push("/login")
+        else {
+            checkAuth(ssr, rtoken_cookie).then(() => {
+                handler(inMemoryToken)
+            })
+        }
+    } else {
+        handler(inMemoryToken)
     }
 }
 

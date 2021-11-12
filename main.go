@@ -23,7 +23,7 @@ func main() {
 	router.Use(Middleware.CORSMiddleware())
 
 	router.POST("/api/v1/newRig", Middleware.CheckAuth, ApiRigs.NewRig)
-	router.DELETE("/api/v1/deleteRig", ApiRigs.DeleteRig)
+	router.DELETE("/api/v1/deleteRig", Middleware.CheckAuth, ApiRigs.DeleteRig)
 	router.GET("/api/v1/getRigs", Middleware.CheckAuth, ApiRigs.GetRigs)
 
 	router.POST("/api/v1/register", Middleware.BeforeRegister, ApiUsers.Register)

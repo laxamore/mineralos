@@ -19,7 +19,7 @@ func Logout(c *gin.Context) {
 		Name:     "rtoken",
 		Value:    url.QueryEscape("rtoken"),
 		MaxAge:   -1,
-		Path:     "/api/v1/refreshToken",
+		Path:     "/",
 		Domain:   os.Getenv("domain"),
 		SameSite: http.SameSiteStrictMode,
 		Secure:   true,

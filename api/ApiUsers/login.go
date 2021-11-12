@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -51,8 +52,20 @@ func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepos
 	})
 
 	if len(result) != 0 {
-		exp := time.Now().Unix() + 300
-		expRT := time.Now().Unix() + 2592000 // 1 Month Expired
+		exp, err := strconv.ParseInt(os.Getenv("ACCESS_TOKEN_EXPIRED"), 10, 64)
+		if err != nil {
+			Log.Printf("ACCESS_TOKEN_EXPIRED env is not number %v", err)
+		}
+		exp = exp + time.Now().Unix()
+
+		expRT, err := strconv.ParseInt(os.Getenv("REFRESH_TOKEN_EXPIRED"), 10, 64)
+		if err != nil {
+			Log.Printf("REFRESH_TOKEN_EXPIRED env is not number %v", err)
+		}
+		expRT = expRT + time.Now().Unix()
+
+		// exp := time.Now().Unix() + os.Getenv("ACCESS_TOKEN_EXPIRED")
+		// expRT := time.Now().Unix() + strconv.Atoi(os.Getenv("REFRESH_TOKEN_EXPIRED")) // 1 Month Expired
 
 		// Create the Claims for token
 		claims := jwt.MapClaims{
@@ -80,7 +93,7 @@ func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepos
 			Name:     "rtoken",
 			Value:    url.QueryEscape(rtoken),
 			MaxAge:   2592000,
-			Path:     "/api/v1/refreshToken",
+			Path:     "/",
 			Domain:   os.Getenv("domain"),
 			SameSite: http.SameSiteStrictMode,
 			Secure:   true,

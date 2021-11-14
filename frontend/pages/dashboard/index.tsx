@@ -4,7 +4,7 @@ import { checkAuth, withAuth, jwtObject, getAuthPayload } from "../../utils/auth
 
 import Navbar from '../../components/navbar'
 import CreateRigModal from '../../components/modals/createRigModal'
-import { Column, useTable } from 'react-table'
+import { Accessor, Column, useTable } from 'react-table'
 
 const isServer = () => typeof window === 'undefined';
 
@@ -20,12 +20,17 @@ const Dashboard: NextPage<Props> = ({ data }) => {
 
     const rigsDataTable = useMemo(() => rigsData, [rigsData])
     interface rigsColumnInterface {
+        status: string
         rig_name: string,
         hashrate: string,
         units: string,
     }
 
     const columns = useMemo<Column<rigsColumnInterface>[]>(() => [
+        {
+            Header: 'status',
+            accessor: 'status',
+        },
         {
             Header: 'rig_name',
             accessor: 'rig_name',

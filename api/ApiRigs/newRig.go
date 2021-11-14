@@ -10,6 +10,7 @@ import (
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
 	"github.com/laxamore/mineralos/utils/Log"
+	"github.com/pebbe/zmq4"
 
 	"github.com/gin-gonic/gin"
 	"go.mongodb.org/mongo-driver/bson"
@@ -50,6 +51,10 @@ func (a *NewRigController) TryNewRig(c *gin.Context, repositoryInterface NewRigR
 			if tokenClaims["privilege"] == "admin" || tokenClaims["privilege"] == "readAndWrite" {
 
 				newUUID := uuid.New()
+				pubKey, key, err := zmq4.NewCurveKeypair()
+				if err != nil {
+					Log.Panicf("NewCurveKeypair: %v", err)
+				}
 
 				insertResultID, err := repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "rigs", bson.D{
 					{
@@ -57,6 +62,12 @@ func (a *NewRigController) TryNewRig(c *gin.Context, repositoryInterface NewRigR
 					},
 					{
 						Key: "rig_name", Value: fmt.Sprintf("%s", bodyData["rig_name"]),
+					},
+					{
+						Key: "key", Value: key,
+					},
+					{
+						Key: "pubkey", Value: pubKey,
 					},
 				})
 

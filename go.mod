@@ -10,6 +10,8 @@ require (
 	go.mongodb.org/mongo-driver v1.7.3
 )
 
+require github.com/zeromq/goczmq v4.1.0+incompatible // indirect
+
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect

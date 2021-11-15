@@ -1,13 +1,16 @@
 package ApiRigs
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 
 	"github.com/gin-gonic/gin"
@@ -16,12 +19,12 @@ import (
 )
 
 type DeleteRigRepositoryInterface interface {
-	DeleteOne(string, string, interface{}) (*mongo.DeleteResult, error)
+	DeleteOne(*mongo.Client, string, string, interface{}) (*mongo.DeleteResult, error)
 }
 
 type DeleteRigController struct{}
 
-func (a DeleteRigController) TryDeleteRig(c *gin.Context, repositoryInterface DeleteRigRepositoryInterface) {
+func (a DeleteRigController) TryDeleteRig(c *gin.Context, client *mongo.Client, repositoryInterface DeleteRigRepositoryInterface) {
 	response := api.Result{
 		Code:     http.StatusForbidden,
 		Response: "forbidden",
@@ -44,7 +47,7 @@ func (a DeleteRigController) TryDeleteRig(c *gin.Context, repositoryInterface De
 			json.Unmarshal(tokenClaimsByte, &tokenClaims)
 
 			if tokenClaims["privilege"] == "admin" || tokenClaims["privilege"] == "readAndWrite" {
-				_, err = repositoryInterface.DeleteOne(os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+				_, err = repositoryInterface.DeleteOne(client, os.Getenv("PROJECT_NAME"), "rigs", bson.D{
 					{
 						Key: "rig_id", Value: fmt.Sprintf("%s", bodyData["rig_id"]),
 					},
@@ -66,8 +69,13 @@ func (a DeleteRigController) TryDeleteRig(c *gin.Context, repositoryInterface De
 }
 
 func DeleteRig(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client, err := db.MongoClient(ctx)
+	utils.CheckErr(err)
+
 	repo := db.MongoDB{}
 	cntrl := DeleteRigController{}
 
-	cntrl.TryDeleteRig(c, repo)
+	cntrl.TryDeleteRig(c, client, repo)
 }

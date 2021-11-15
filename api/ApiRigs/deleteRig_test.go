@@ -20,7 +20,7 @@ type DeleteRigRepositoryMock struct {
 	mock.Mock
 }
 
-func (a DeleteRigRepositoryMock) DeleteOne(db_name string, collection_name string, filter interface{}) (*mongo.DeleteResult, error) {
+func (a DeleteRigRepositoryMock) DeleteOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) (*mongo.DeleteResult, error) {
 	dummyRigData := map[string]interface{}{
 		"rig_id": "1234567",
 	}
@@ -94,7 +94,7 @@ func TestDeleteRig(t *testing.T) {
 			repo := DeleteRigRepositoryMock{}
 			cntrl := DeleteRigController{}
 
-			cntrl.TryDeleteRig(c, repo)
+			cntrl.TryDeleteRig(c, nil, repo)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

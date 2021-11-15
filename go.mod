@@ -4,13 +4,12 @@ go 1.17
 
 require (
 	github.com/gin-gonic/gin v1.7.4
+	github.com/go-playground/assert/v2 v2.0.1
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.4.0
 	github.com/pebbe/zmq4 v1.2.7
 	go.mongodb.org/mongo-driver v1.7.3
 )
-
-require github.com/zeromq/goczmq v4.1.0+incompatible // indirect
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

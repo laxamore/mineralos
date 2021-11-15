@@ -1,27 +1,31 @@
 package Middleware
 
 import (
+	"context"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type BeforeRegisterRepositoryInterface interface {
-	Find(string, string, interface{}) ([]map[string]interface{}, error)
-	FindOne(string, string, interface{}) map[string]interface{}
+	Find(*mongo.Client, string, string, interface{}) ([]map[string]interface{}, error)
+	FindOne(*mongo.Client, string, string, interface{}) map[string]interface{}
 }
 
 type BeforeRegisterController struct{}
 
-func (a BeforeRegisterController) TryBeforeRegister(c *gin.Context, repositoryInterface BeforeRegisterRepositoryInterface) {
+func (a BeforeRegisterController) TryBeforeRegister(c *gin.Context, client *mongo.Client, repositoryInterface BeforeRegisterRepositoryInterface) {
 	c.Set("token", nil)
 	regToken := c.GetHeader("regToken")
 
-	results, err := repositoryInterface.Find(os.Getenv("PROJECT_NAME"), "users", bson.D{{}})
+	results, err := repositoryInterface.Find(client, os.Getenv("PROJECT_NAME"), "users", bson.D{{}})
 	// Log.Printf("%v", len(results))
 
 	if err != nil {
@@ -29,7 +33,7 @@ func (a BeforeRegisterController) TryBeforeRegister(c *gin.Context, repositoryIn
 	}
 
 	if len(results) > 0 {
-		result := repositoryInterface.FindOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{{Key: "token", Value: regToken}})
+		result := repositoryInterface.FindOne(client, os.Getenv("PROJECT_NAME"), "registerToken", bson.D{{Key: "token", Value: regToken}})
 		// Log.Printf("%v", result)
 
 		if len(result) > 0 {
@@ -49,8 +53,13 @@ func (a BeforeRegisterController) TryBeforeRegister(c *gin.Context, repositoryIn
 }
 
 func BeforeRegister(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client, err := db.MongoClient(ctx)
+	utils.CheckErr(err)
+
 	repo := db.MongoDB{}
 	cntrl := BeforeRegisterController{}
 
-	cntrl.TryBeforeRegister(c, repo)
+	cntrl.TryBeforeRegister(c, client, repo)
 }

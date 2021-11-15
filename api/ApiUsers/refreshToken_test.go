@@ -16,13 +16,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type RefreshTokenRepositoryMock struct {
 	mock.Mock
 }
 
-func (a RefreshTokenRepositoryMock) FindOne(db_name string, collection_name string, filter interface{}) map[string]interface{} {
+func (a RefreshTokenRepositoryMock) FindOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) map[string]interface{} {
 	var input map[string]interface{}
 	filterBytes, _ := bson.Marshal(filter)
 	bson.Unmarshal(filterBytes, &input)
@@ -88,7 +89,7 @@ func TestRefreshToken(t *testing.T) {
 			repo := RefreshTokenRepositoryMock{}
 			cntrl := RefreshTokenController{}
 
-			cntrl.TryRefreshToken(c, repo)
+			cntrl.TryRefreshToken(c, nil, repo)
 
 			assert.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expected["Code"]), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 

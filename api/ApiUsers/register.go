@@ -1,6 +1,7 @@
 package ApiUsers
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -10,10 +11,12 @@ import (
 	"net/mail"
 	"os"
 	"regexp"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -21,15 +24,15 @@ import (
 )
 
 type RegisterRepositoryInterface interface {
-	FindOne(string, string, interface{}) map[string]interface{}
-	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
-	DeleteOne(string, string, interface{}) (*mongo.DeleteResult, error)
-	IndexesReplaceMany(string, string, []mongo.IndexModel) ([]string, error)
+	FindOne(*mongo.Client, string, string, interface{}) map[string]interface{}
+	InsertOne(*mongo.Client, string, string, interface{}) (*mongo.InsertOneResult, error)
+	DeleteOne(*mongo.Client, string, string, interface{}) (*mongo.DeleteResult, error)
+	IndexesReplaceMany(*mongo.Client, string, string, []mongo.IndexModel) ([]string, error)
 }
 
 type RegisterController struct{}
 
-func (a RegisterController) TryRegister(c *gin.Context, repositoryInterface RegisterRepositoryInterface) {
+func (a RegisterController) TryRegister(c *gin.Context, client *mongo.Client, repositoryInterface RegisterRepositoryInterface) {
 	var response api.Result
 	response.Code = http.StatusBadRequest
 	response.Response = "Bad Request"
@@ -72,7 +75,7 @@ func (a RegisterController) TryRegister(c *gin.Context, repositoryInterface Regi
 
 			// Create/Replace MongoDB Indexes For Unique Username & Email
 			isUnique := true
-			createIndexRes, err := repositoryInterface.IndexesReplaceMany(os.Getenv("PROJECT_NAME"), "users", []mongo.IndexModel{
+			createIndexRes, err := repositoryInterface.IndexesReplaceMany(client, os.Getenv("PROJECT_NAME"), "users", []mongo.IndexModel{
 				{
 					Keys: bson.D{
 						{Key: "username", Value: 1},
@@ -108,7 +111,7 @@ func (a RegisterController) TryRegister(c *gin.Context, repositoryInterface Regi
 			}
 			for _, check := range checkIndex {
 				if len(result) == 0 {
-					result = repositoryInterface.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+					result = repositoryInterface.FindOne(client, os.Getenv("PROJECT_NAME"), "users", bson.D{
 						{
 							Key: check, Value: fmt.Sprintf("%s", bodyData[check]),
 						},
@@ -122,7 +125,7 @@ func (a RegisterController) TryRegister(c *gin.Context, repositoryInterface Regi
 			if len(result) == 0 {
 				if tokenInfo != nil || registerAdmin {
 					// Delete Register Token
-					_, err := repositoryInterface.DeleteOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
+					_, err := repositoryInterface.DeleteOne(client, os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
 						{
 							Key: "token", Value: fmt.Sprintf("%s", tokenInfo["token"]),
 						},
@@ -136,7 +139,7 @@ func (a RegisterController) TryRegister(c *gin.Context, repositoryInterface Regi
 						errMsg = fmt.Sprintf("Register DeleteOne Error:\n%v", err)
 					} else {
 						// Register New User
-						res, err := repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+						res, err := repositoryInterface.InsertOne(client, os.Getenv("PROJECT_NAME"), "users", bson.D{
 							{
 								Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 							}, {
@@ -181,8 +184,13 @@ func (a RegisterController) TryRegister(c *gin.Context, repositoryInterface Regi
 }
 
 func Register(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client, err := db.MongoClient(ctx)
+	utils.CheckErr(err)
+
 	repo := db.MongoDB{}
 	cntrl := RegisterController{}
 
-	cntrl.TryRegister(c, repo)
+	cntrl.TryRegister(c, client, repo)
 }

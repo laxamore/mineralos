@@ -14,13 +14,14 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type LoginRepositoryMock struct {
 	mock.Mock
 }
 
-func (r LoginRepositoryMock) FindOne(db_name string, collection_name string, filter interface{}) map[string]interface{} {
+func (r LoginRepositoryMock) FindOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) map[string]interface{} {
 	ObjectID, _ := primitive.ObjectIDFromHex("61866b3920b512a8608788ad")
 	users := map[string]interface{}{
 		"_id":       ObjectID,
@@ -88,7 +89,7 @@ func TestLogin(t *testing.T) {
 			repo := LoginRepositoryMock{}
 			cntrl := LoginController{}
 
-			cntrl.TryLogin(c, repo)
+			cntrl.TryLogin(c, nil, repo)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

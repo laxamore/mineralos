@@ -1,6 +1,7 @@
 package ApiUsers
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -15,19 +16,21 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/JWT"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type LoginRepositoryInterface interface {
-	FindOne(string, string, interface{}) map[string]interface{}
+	FindOne(*mongo.Client, string, string, interface{}) map[string]interface{}
 }
 
 type LoginController struct{}
 
-func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepositoryInterface) {
+func (a LoginController) TryLogin(c *gin.Context, client *mongo.Client, repositoryInterface LoginRepositoryInterface) {
 	var response api.Result
 	bodyRaw, err := c.GetRawData()
 
@@ -42,7 +45,7 @@ func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepos
 	hasher.Write([]byte(fmt.Sprintf("%s", bodyData["password"])))
 	sha256_hash := hex.EncodeToString(hasher.Sum(nil))
 
-	result := repositoryInterface.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+	result := repositoryInterface.FindOne(client, os.Getenv("PROJECT_NAME"), "users", bson.D{
 		{
 			Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 		},
@@ -115,8 +118,13 @@ func (a LoginController) TryLogin(c *gin.Context, repositoryInterface LoginRepos
 }
 
 func Login(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client, err := db.MongoClient(ctx)
+	utils.CheckErr(err)
+
 	repo := db.MongoDB{}
 	cntrl := LoginController{}
 
-	cntrl.TryLogin(c, repo)
+	cntrl.TryLogin(c, client, repo)
 }

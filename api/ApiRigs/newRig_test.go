@@ -19,7 +19,7 @@ type NewRigRepositoryMock struct {
 	mock.Mock
 }
 
-func (a NewRigRepositoryMock) InsertOne(db_name string, collection_name string, fitler interface{}) (*mongo.InsertOneResult, error) {
+func (a NewRigRepositoryMock) InsertOne(client *mongo.Client, db_name string, collection_name string, fitler interface{}) (*mongo.InsertOneResult, error) {
 	InsertID := mongo.InsertOneResult{
 		InsertedID: "testinsertid",
 	}
@@ -76,7 +76,7 @@ func TestNewRig(t *testing.T) {
 			repo := NewRigRepositoryMock{}
 			cntrl := NewRigController{}
 
-			cntrl.TryNewRig(c, repo)
+			cntrl.TryNewRig(c, nil, repo)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

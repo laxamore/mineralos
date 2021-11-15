@@ -19,12 +19,12 @@ type RegisterTokenRepositoryMock struct {
 	mock.Mock
 }
 
-func (a RegisterTokenRepositoryMock) InsertOne(db_name string, collection_name string, filter interface{}) (*mongo.InsertOneResult, error) {
+func (a RegisterTokenRepositoryMock) InsertOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) (*mongo.InsertOneResult, error) {
 	var InsertOneResult *mongo.InsertOneResult
 	return InsertOneResult, nil
 }
 
-func (a RegisterTokenRepositoryMock) IndexesReplaceOne(db_name string, collection_name string, indexModel mongo.IndexModel) (string, error) {
+func (a RegisterTokenRepositoryMock) IndexesReplaceOne(client *mongo.Client, db_name string, collection_name string, indexModel mongo.IndexModel) (string, error) {
 	return "", nil
 }
 
@@ -79,7 +79,7 @@ func TestRegisterToken(t *testing.T) {
 			repo := RegisterTokenRepositoryMock{}
 			cntrl := RegisterTokenController{}
 
-			cntrl.TryRegisterToken(c, repo)
+			cntrl.TryRegisterToken(c, nil, repo)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type BeforeRegisterRepositoryMock struct {
@@ -17,7 +18,7 @@ type BeforeRegisterRepositoryMock struct {
 	emptyUsers bool
 }
 
-func (a BeforeRegisterRepositoryMock) Find(db_name string, collection_name string, filter interface{}) ([]map[string]interface{}, error) {
+func (a BeforeRegisterRepositoryMock) Find(client *mongo.Client, db_name string, collection_name string, filter interface{}) ([]map[string]interface{}, error) {
 	dumyUsers := []map[string]interface{}{
 		{
 			"username":  "test",
@@ -33,7 +34,7 @@ func (a BeforeRegisterRepositoryMock) Find(db_name string, collection_name strin
 	return dumyUsers, nil
 }
 
-func (a BeforeRegisterRepositoryMock) FindOne(db_name string, collection_name string, filter interface{}) map[string]interface{} {
+func (a BeforeRegisterRepositoryMock) FindOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) map[string]interface{} {
 	token := map[string]interface{}{
 		"token": "testtesttesttest",
 	}
@@ -96,7 +97,7 @@ func TestBeforeRegister(t *testing.T) {
 
 			repo.emptyUsers = td.emptyUsers
 
-			cntrl.TryBeforeRegister(c, repo)
+			cntrl.TryBeforeRegister(c, nil, repo)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

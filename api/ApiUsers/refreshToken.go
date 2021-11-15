@@ -1,6 +1,7 @@
 package ApiUsers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
@@ -11,19 +12,21 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/JWT"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type RefreshTokenRepositoryInterface interface {
-	FindOne(string, string, interface{}) map[string]interface{}
+	FindOne(*mongo.Client, string, string, interface{}) map[string]interface{}
 }
 
 type RefreshTokenController struct{}
 
-func (a RefreshTokenController) TryRefreshToken(c *gin.Context, repositoryInterface RefreshTokenRepositoryInterface) {
+func (a RefreshTokenController) TryRefreshToken(c *gin.Context, client *mongo.Client, repositoryInterface RefreshTokenRepositoryInterface) {
 	response := api.Result{
 		Code:     http.StatusBadRequest,
 		Response: "Bad Request",
@@ -42,7 +45,7 @@ func (a RefreshTokenController) TryRefreshToken(c *gin.Context, repositoryInterf
 				Log.Print("Invalid id")
 			}
 
-			result := repositoryInterface.FindOne(os.Getenv("PROJECT_NAME"), "users", bson.D{
+			result := repositoryInterface.FindOne(client, os.Getenv("PROJECT_NAME"), "users", bson.D{
 				{
 					Key: "_id", Value: objectID,
 				},
@@ -85,8 +88,13 @@ func (a RefreshTokenController) TryRefreshToken(c *gin.Context, repositoryInterf
 }
 
 func RefreshToken(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client, err := db.MongoClient(ctx)
+	utils.CheckErr(err)
+
 	repo := db.MongoDB{}
 	cntrl := RefreshTokenController{}
 
-	cntrl.TryRefreshToken(c, repo)
+	cntrl.TryRefreshToken(c, client, repo)
 }

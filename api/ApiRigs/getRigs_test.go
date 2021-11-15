@@ -9,13 +9,14 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type GetRigsRepositoryMock struct {
 	mock.Mock
 }
 
-func (a GetRigsRepositoryMock) Find(db_name string, collection_name string, filter interface{}) ([]map[string]interface{}, error) {
+func (a GetRigsRepositoryMock) Find(client *mongo.Client, db_name string, collection_name string, filter interface{}) ([]map[string]interface{}, error) {
 	dummyRigsData := []map[string]interface{}{
 		{
 			"rig_id":   "1234567",
@@ -52,7 +53,7 @@ func TestGetRigs(t *testing.T) {
 			repo := GetRigsRepositoryMock{}
 			cntrl := GetRigsController{}
 
-			cntrl.TryGetRigs(c, repo)
+			cntrl.TryGetRigs(c, nil, repo)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

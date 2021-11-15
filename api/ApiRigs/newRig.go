@@ -1,14 +1,17 @@
 package ApiRigs
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"github.com/pebbe/zmq4"
 
@@ -18,12 +21,12 @@ import (
 )
 
 type NewRigRepositoryInterface interface {
-	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
+	InsertOne(*mongo.Client, string, string, interface{}) (*mongo.InsertOneResult, error)
 }
 
 type NewRigController struct{}
 
-func (a *NewRigController) TryNewRig(c *gin.Context, repositoryInterface NewRigRepositoryInterface) {
+func (a *NewRigController) TryNewRig(c *gin.Context, client *mongo.Client, repositoryInterface NewRigRepositoryInterface) {
 	response := api.Result{
 		Code: http.StatusForbidden,
 		Response: map[string]interface{}{
@@ -56,7 +59,7 @@ func (a *NewRigController) TryNewRig(c *gin.Context, repositoryInterface NewRigR
 					Log.Panicf("NewCurveKeypair: %v", err)
 				}
 
-				insertResultID, err := repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+				insertResultID, err := repositoryInterface.InsertOne(client, os.Getenv("PROJECT_NAME"), "rigs", bson.D{
 					{
 						Key: "rig_id", Value: newUUID.String(),
 					},
@@ -89,8 +92,13 @@ func (a *NewRigController) TryNewRig(c *gin.Context, repositoryInterface NewRigR
 }
 
 func NewRig(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client, err := db.MongoClient(ctx)
+	utils.CheckErr(err)
+
 	repo := db.MongoDB{}
 	cntrl := NewRigController{}
 
-	cntrl.TryNewRig(c, repo)
+	cntrl.TryNewRig(c, client, repo)
 }

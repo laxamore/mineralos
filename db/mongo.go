@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"time"
 
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
@@ -14,26 +13,29 @@ import (
 )
 
 type MongoDBInterface interface {
-	Find(string, string, interface{}) ([]map[string]interface{}, error)
-	FindOne(string, string, interface{}) map[string]interface{}
-	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
-	DeleteOne(string, string, interface{}) (*mongo.DeleteResult, error)
-	IndexesCreateOne(string, string, mongo.IndexModel) (string, error)
-	IndexesDropOne(string, string, string) (bson.Raw, error)
-	IndexesReplaceOne(string, string, mongo.IndexModel) (string, error)
-	IndexesReplaceMany(string, string, []mongo.IndexModel) (string, error)
+	Find(*mongo.Client, string, string, interface{}) ([]map[string]interface{}, error)
+	FindOne(*mongo.Client, string, string, interface{}) map[string]interface{}
+	InsertOne(*mongo.Client, string, string, interface{}) (*mongo.InsertOneResult, error)
+	DeleteOne(*mongo.Client, string, string, interface{}) (*mongo.DeleteResult, error)
+	IndexesCreateOne(*mongo.Client, string, string, mongo.IndexModel) (string, error)
+	IndexesDropOne(*mongo.Client, string, string, string) (bson.Raw, error)
+	IndexesReplaceOne(*mongo.Client, string, string, mongo.IndexModel) (string, error)
+	IndexesReplaceMany(*mongo.Client, string, string, []mongo.IndexModel) (string, error)
+	UpdateOne(*mongo.Client, string, string, interface{}, interface{}) (*mongo.UpdateResult, error)
 }
 
 type MongoDB struct{}
 
-func (a MongoDB) Find(db_name string, collection_name string, filter interface{}) ([]map[string]interface{}, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := MongoClient(ctx)
+func (a MongoDB) Find(client *mongo.Client, db_name string, collection_name string, filter interface{}) ([]map[string]interface{}, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
 
-	if err != nil {
-		Log.Panicf("Error Connecting to MongoDB:\n%v", err)
-	}
+	// if err != nil {
+	// 	Log.Printf("error Connecting to mongodb:\n%v", err)
+	// }
+
+	ctx := context.TODO()
 
 	collection := client.Database(db_name).Collection(collection_name)
 	cur, err := collection.Find(ctx, filter)
@@ -48,7 +50,7 @@ func (a MongoDB) Find(db_name string, collection_name string, filter interface{}
 		var elem map[string]interface{}
 		err := cur.Decode(&elem)
 		if err != nil {
-			Log.Panicf("%v", err)
+			Log.Printf("%v", err)
 		}
 
 		results = append(results, elem)
@@ -57,14 +59,16 @@ func (a MongoDB) Find(db_name string, collection_name string, filter interface{}
 	return results, err
 }
 
-func (a MongoDB) FindOne(db_name string, collection_name string, filter interface{}) map[string]interface{} {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := MongoClient(ctx)
+func (a MongoDB) FindOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) map[string]interface{} {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
 
-	if err != nil {
-		Log.Panicf("Error Connecting to MongoDB:\n%v", err)
-	}
+	// if err != nil {
+	// 	Log.Printf("error Connecting to mongodb:\n%v", err)
+	// }
+
+	ctx := context.TODO()
 
 	collection := client.Database(db_name).Collection(collection_name)
 	var result map[string]interface{}
@@ -72,25 +76,27 @@ func (a MongoDB) FindOne(db_name string, collection_name string, filter interfac
 	return result
 }
 
-func (a MongoDB) InsertOne(db_name string, collection_name string, filter interface{}) (*mongo.InsertOneResult, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := MongoClient(ctx)
+func (a MongoDB) InsertOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) (*mongo.InsertOneResult, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
 
-	if err != nil {
-		Log.Panicf("Error Connecting to MongoDB:\n%v", err)
-	}
+	// if err != nil {
+	// 	Log.Printf("error Connecting to mongodb:\n%v", err)
+	// }
+
+	ctx := context.TODO()
 
 	collection := client.Database(db_name).Collection(collection_name)
 	return collection.InsertOne(ctx, filter)
 }
 
-func (a MongoDB) DeleteOne(db_name string, collection_name string, filter interface{}) (*mongo.DeleteResult, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := MongoClient(ctx)
+func (a MongoDB) DeleteOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) (DeleteResult *mongo.DeleteResult, err error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
 
-	var DeleteResult *mongo.DeleteResult
+	ctx := context.TODO()
 
 	if err != nil {
 		return DeleteResult, fmt.Errorf("error connecting to mongodb:\n%v", err)
@@ -104,40 +110,46 @@ func (a MongoDB) DeleteOne(db_name string, collection_name string, filter interf
 	return DeleteResult, err
 }
 
-func (a MongoDB) IndexesCreateOne(db_name string, collection_name string, indexModel mongo.IndexModel) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := MongoClient(ctx)
+func (a MongoDB) IndexesCreateOne(client *mongo.Client, db_name string, collection_name string, indexModel mongo.IndexModel) (string, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
 
-	if err != nil {
-		return "", fmt.Errorf("error connecting to mongodb:\n%v", err)
-	}
+	// if err != nil {
+	// 	Log.Printf("error Connecting to mongodb:\n%v", err)
+	// }
+
+	ctx := context.TODO()
 
 	collection := client.Database(db_name).Collection(collection_name)
 	return collection.Indexes().CreateOne(ctx, indexModel)
 }
 
-func (a MongoDB) IndexesDropOne(db_name string, collection_name string, indexName string) (bson.Raw, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := MongoClient(ctx)
+func (a MongoDB) IndexesDropOne(client *mongo.Client, db_name string, collection_name string, indexName string) (bson.Raw, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
 
-	if err != nil {
-		return nil, fmt.Errorf("error connecting to mongodb:\n%v", err)
-	}
+	// if err != nil {
+	// 	Log.Printf("error Connecting to mongodb:\n%v", err)
+	// }
+
+	ctx := context.TODO()
 
 	collection := client.Database(db_name).Collection(collection_name)
 	return collection.Indexes().DropOne(ctx, indexName)
 }
 
-func (a MongoDB) IndexesReplaceOne(db_name string, collection_name string, indexModel mongo.IndexModel) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := MongoClient(ctx)
+func (a MongoDB) IndexesReplaceOne(client *mongo.Client, db_name string, collection_name string, indexModel mongo.IndexModel) (string, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
 
-	if err != nil {
-		return "", fmt.Errorf("error connecting to mongodb:\n%v", err)
-	}
+	// if err != nil {
+	// 	Log.Printf("error Connecting to mongodb:\n%v", err)
+	// }
+
+	ctx := context.TODO()
 
 	collection := client.Database(db_name).Collection(collection_name)
 	res, err := collection.Indexes().CreateOne(ctx, indexModel)
@@ -167,14 +179,16 @@ func (a MongoDB) IndexesReplaceOne(db_name string, collection_name string, index
 	return res, err
 }
 
-func (a MongoDB) IndexesReplaceMany(db_name string, collection_name string, indexModel []mongo.IndexModel) ([]string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := MongoClient(ctx)
+func (a MongoDB) IndexesReplaceMany(client *mongo.Client, db_name string, collection_name string, indexModel []mongo.IndexModel) ([]string, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
 
-	if err != nil {
-		return []string{""}, fmt.Errorf("error connecting to mongodb:\n%v", err)
-	}
+	// if err != nil {
+	// 	Log.Printf("error Connecting to mongodb:\n%v", err)
+	// }
+
+	ctx := context.TODO()
 
 	collection := client.Database(db_name).Collection(collection_name)
 	res, err := collection.Indexes().CreateMany(ctx, indexModel)
@@ -204,6 +218,21 @@ func (a MongoDB) IndexesReplaceMany(db_name string, collection_name string, inde
 		return collection.Indexes().CreateMany(ctx, indexModel)
 	}
 	return res, err
+}
+
+func (a MongoDB) UpdateOne(client *mongo.Client, db_name string, collection_name string, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
+	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	// defer cancel()
+	// client, err := MongoClient(ctx)
+
+	// if err != nil {
+	// 	Log.Printf("error Connecting to mongodb:\n%v", err)
+	// }
+
+	ctx := context.TODO()
+
+	collection := client.Database(db_name).Collection(collection_name)
+	return collection.UpdateOne(ctx, filter, update)
 }
 
 func MongoClient(ctx context.Context) (*mongo.Client, error) {

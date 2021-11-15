@@ -22,7 +22,7 @@ type RegisterRepositoryMock struct {
 	mock.Mock
 }
 
-func (a RegisterRepositoryMock) FindOne(db_name string, collection_name string, filter interface{}) map[string]interface{} {
+func (a RegisterRepositoryMock) FindOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) map[string]interface{} {
 	users := []map[string]interface{}{{
 		"username":  "testexist",
 		"email":     "test@testexist.com",
@@ -44,12 +44,12 @@ func (a RegisterRepositoryMock) FindOne(db_name string, collection_name string, 
 	return map[string]interface{}{}
 }
 
-func (a RegisterRepositoryMock) InsertOne(db_name string, collection_name string, filter interface{}) (*mongo.InsertOneResult, error) {
+func (a RegisterRepositoryMock) InsertOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) (*mongo.InsertOneResult, error) {
 	var insertOneResult *mongo.InsertOneResult
 	return insertOneResult, nil
 }
 
-func (a RegisterRepositoryMock) DeleteOne(db_name string, collection_name string, filter interface{}) (*mongo.DeleteResult, error) {
+func (a RegisterRepositoryMock) DeleteOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) (*mongo.DeleteResult, error) {
 	registerToken := []map[string]interface{}{{
 		"createdAt": time.Now(),
 		"token":     "testtesttesttest",
@@ -70,7 +70,7 @@ func (a RegisterRepositoryMock) DeleteOne(db_name string, collection_name string
 	return DeleteResult, errors.New("DeleteOne Failed:\n")
 }
 
-func (a RegisterRepositoryMock) IndexesReplaceMany(db_name string, collection_name string, indexModel []mongo.IndexModel) ([]string, error) {
+func (a RegisterRepositoryMock) IndexesReplaceMany(client *mongo.Client, db_name string, collection_name string, indexModel []mongo.IndexModel) ([]string, error) {
 	return []string{}, nil
 }
 
@@ -204,7 +204,7 @@ func TestRegister(t *testing.T) {
 			repo := RegisterRepositoryMock{}
 			cntrl := RegisterController{}
 
-			cntrl.TryRegister(c, repo)
+			cntrl.TryRegister(c, nil, repo)
 
 			t.Logf("Response Body: %s", w.Body.String())
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))

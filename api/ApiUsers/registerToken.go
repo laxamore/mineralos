@@ -1,6 +1,7 @@
 package ApiUsers
 
 import (
+	"context"
 	"crypto/rand"
 	"encoding/json"
 	"fmt"
@@ -11,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/api"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -18,13 +20,13 @@ import (
 )
 
 type RegisterTokenRepositoryInterface interface {
-	InsertOne(string, string, interface{}) (*mongo.InsertOneResult, error)
-	IndexesReplaceOne(string, string, mongo.IndexModel) (string, error)
+	InsertOne(*mongo.Client, string, string, interface{}) (*mongo.InsertOneResult, error)
+	IndexesReplaceOne(*mongo.Client, string, string, mongo.IndexModel) (string, error)
 }
 
 type RegisterTokenController struct{}
 
-func (a RegisterTokenController) TryRegisterToken(c *gin.Context, repositoryInterface RegisterTokenRepositoryInterface) {
+func (a RegisterTokenController) TryRegisterToken(c *gin.Context, client *mongo.Client, repositoryInterface RegisterTokenRepositoryInterface) {
 	response := api.Result{
 		Code:     http.StatusInternalServerError,
 		Response: "Internal Server Error",
@@ -53,7 +55,7 @@ func (a RegisterTokenController) TryRegisterToken(c *gin.Context, repositoryInte
 			response.Response = "Bad Request"
 		} else {
 			var expireAfterSeconds int32 = 43200
-			createIndexRes, err := repositoryInterface.IndexesReplaceOne(os.Getenv("PROJECT_NAME"), "registerToken", mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
+			createIndexRes, err := repositoryInterface.IndexesReplaceOne(client, os.Getenv("PROJECT_NAME"), "registerToken", mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
 			if err != nil {
 				response.Code = http.StatusInternalServerError
 				response.Response = "Internal Server Error"
@@ -67,7 +69,7 @@ func (a RegisterTokenController) TryRegisterToken(c *gin.Context, repositoryInte
 					return fmt.Sprintf("%x", b)
 				}()
 
-				res, err := repositoryInterface.InsertOne(os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
+				res, err := repositoryInterface.InsertOne(client, os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
 					{
 						Key: "createdAt", Value: time.Now(),
 					},
@@ -101,8 +103,13 @@ func (a RegisterTokenController) TryRegisterToken(c *gin.Context, repositoryInte
 }
 
 func RegisterToken(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+	client, err := db.MongoClient(ctx)
+	utils.CheckErr(err)
+
 	repo := db.MongoDB{}
 	cntrl := RegisterTokenController{}
 
-	cntrl.TryRegisterToken(c, repo)
+	cntrl.TryRegisterToken(c, client, repo)
 }

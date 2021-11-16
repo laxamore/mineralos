@@ -1,9 +1,13 @@
-const { parsed: localEnv } = require('dotenv').config({
+const { parsed: mainEnv } = require('dotenv').config({
   path: '../.env',
 })
 
 /** @type {import('next').NextConfig} */
 module.exports = {
   reactStrictMode: true,
-  env: localEnv
+  env: {
+    ...mainEnv,
+    API_ENDPOINT_SSR: process.env.DOCKER ? 'http://backend:5000' : mainEnv.API_ENDPOINT,
+    PORT: process.env.PORT
+  }
 }

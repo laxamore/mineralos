@@ -14,7 +14,7 @@ const Login: NextPage = () => {
             username: formData.get("username"),
             password: formData.get("password")
         }
-        const response = await fetch('http://localhost:5000/api/v1/login', {
+        const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/login`, {
             method: 'POST',
             mode: 'cors',
             cache: 'no-cache',

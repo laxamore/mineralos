@@ -18,7 +18,6 @@ const Dashboard: NextPage<Props> = ({ data }) => {
     const [showCreateRigModal, setShowCreateRigModal] = useState(false);
     const [rigsData, setRigsData] = useState([]);
 
-    const rigsDataTable = useMemo(() => rigsData, [rigsData])
     interface rigsColumnInterface {
         status: string
         rig_name: string,
@@ -53,10 +52,15 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                 setPrivilege(authPayload.privilege)
             }
         })
-        setRigsData(data.rigs)
-    }, [])
+        if (data.rigs === null) {
+            setRigsData([])
+        }
+        else {
+            setRigsData(data.rigs)
+        }
+    }, [data.rigs])
 
-    const tableInstance = useTable({ columns: columns, data: rigsDataTable })
+    const tableInstance = useTable({ columns: columns, data: rigsData })
     const {
         rows,
     } = tableInstance
@@ -71,8 +75,6 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                             <div className="flex flex-row p-4 border-b-2 border-blue-700">
                                 <button className={`p-2 bg-blue-600 rounded-lg ${privilege === 'admin' || privilege === 'readAndWrite' ? 'hover:bg-blue-700' : 'opacity-50 cursor-default'}`}
                                     onClick={() => {
-                                        console.log(rigsData)
-                                        console.log(rows)
                                         setShowCreateRigModal(true)
                                     }}
                                     disabled={privilege === 'admin' || privilege === 'readAndWrite' ? false : true}>
@@ -139,7 +141,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx: any) => {
     const getRigsData = () => {
         return new Promise(resolve => {
             withAuth(async (token: jwtObject) => {
-                const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/getRigs`, {
+                const response = await fetch(`${isServer() ? process.env.API_ENDPOINT_SSR : process.env.API_ENDPOINT}/api/v1/getRigs`, {
                     method: 'GET',
                     mode: 'cors',
                     headers: {

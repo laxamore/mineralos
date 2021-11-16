@@ -236,10 +236,14 @@ func (a MongoDB) UpdateOne(client *mongo.Client, db_name string, collection_name
 }
 
 func MongoClient(ctx context.Context) (*mongo.Client, error) {
+	DB_SERVER := os.Getenv("DB_SERVER")
+	if os.Getenv("DOCKER") == "true" {
+		DB_SERVER = "mongodb"
+	}
 	connectionString := fmt.Sprintf("mongodb://%s:%s@%s:%s",
 		os.Getenv("DB_USER"),
 		os.Getenv("DB_PASSWORD"),
-		os.Getenv("DB_SERVER"),
+		DB_SERVER,
 		os.Getenv("DB_PORT"),
 	)
 	client, err := mongo.Connect(ctx, options.Client().ApplyURI(connectionString))

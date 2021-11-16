@@ -38,7 +38,7 @@ export function checkAuth(ssr?: boolean, rtoken_cookies?: string) {
                 }
             }
 
-            const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/refreshToken`, options)
+            const response = await fetch(`${ssr ? process.env.API_ENDPOINT_SSR : process.env.API_ENDPOINT}/api/v1/refreshToken`, options)
             const responseJSON = await response.json()
 
             if (responseJSON.jwt_token) {

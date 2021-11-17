@@ -1,10 +1,13 @@
 import type { GetServerSideProps, NextPage } from 'next'
-import { useEffect, useMemo, useState } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import { checkAuth, withAuth, jwtObject, getAuthPayload } from "../../utils/auth"
 
 import Navbar from '../../components/navbar'
+import { Content } from '../../components/content'
+import { ContentContext, RefreshContext } from "../../utils/context"
 import CreateRigModal from '../../components/modals/createRigModal'
-import { Accessor, Column, useTable } from 'react-table'
+import { Column, useTable } from 'react-table'
+import Router from 'next/router'
 
 const isServer = () => typeof window === 'undefined';
 
@@ -17,6 +20,8 @@ const Dashboard: NextPage<Props> = ({ data }) => {
     const [privilege, setPrivilege] = useState('readOnly')
     const [showCreateRigModal, setShowCreateRigModal] = useState(false);
     const [rigsData, setRigsData] = useState([]);
+    const [refreshTimeout, setRefreshTimeout] = useContext(RefreshContext)
+    const [refreshTimerID, setRefreshTimerID] = useState<NodeJS.Timer>()
 
     interface rigsColumnInterface {
         status: string
@@ -45,6 +50,32 @@ const Dashboard: NextPage<Props> = ({ data }) => {
     ], []);
 
     useEffect(() => {
+        const refreshState = localStorage.getItem('refreshState');
+        setRefreshTimeout(refreshState === 'true')
+
+        if (refreshState === 'true' && refreshTimerID === undefined) {
+            setRefreshTimerID(setInterval(() => {
+                withAuth(async (token: jwtObject) => {
+                    const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/getRigs`, {
+                        method: 'GET',
+                        mode: 'cors',
+                        headers: {
+                            Authorization: `Bearer ${token.jwt_token}`
+                        }
+                    })
+
+                    if (response.status == 200) {
+                        const responseJSON = await response.json()
+                        setRigsData(responseJSON.rigs)
+                    }
+                })
+            }, 1000))
+        } else if (refreshState !== 'true' && refreshTimerID !== undefined) {
+            clearInterval(refreshTimerID);
+        }
+    }, [refreshTimeout])
+
+    useEffect(() => {
         checkAuth().then(auth => {
             if (auth) {
                 setIsAuth(true)
@@ -71,59 +102,60 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                 <>
                     <Navbar />
                     <div className="flex flex-col justify-center items-center h-full w-full">
-                        <div className="justify-start flex flex-col w-3/4 m-24 bg-gray-700 text-white rounded-2xl">
-                            <div className="flex flex-row p-4 border-b-2 border-blue-700">
-                                <button className={`p-2 bg-blue-600 rounded-lg ${privilege === 'admin' || privilege === 'readAndWrite' ? 'hover:bg-blue-700' : 'opacity-50 cursor-default'}`}
-                                    onClick={() => {
-                                        setShowCreateRigModal(true)
-                                    }}
-                                    disabled={privilege === 'admin' || privilege === 'readAndWrite' ? false : true}>
-                                    Create New Rig
-                                </button>
-                            </div>
-                            <ul className="mt-2">
-                                {
-                                    rows.map((val: any) => {
-                                        return <li className="border border-green-600 p-3 rounded-2xl cursor-pointer mt-2" key={val.original.rig_id}>
-                                            <div className="flex flex-row items-center">
-                                                <div className="w-1/6">
-                                                    <p className="text-lg font-bold">{val.original.rig_name}</p>
-                                                    <p className="text-sm">0 -/s</p>
-                                                </div>
-                                                <div className="rounded-lg py-2 mx-2 w-5/6 h-12 bg-gray-800">
+                        <ContentContext.Provider value={[setShowCreateRigModal]}>
+                            <Content showCreateButton={true} showRefreshButtonTimeout={true} showRefreshButton={true} privilege={privilege}>
+                                <ul className="mt-2">
+                                    {
+                                        rows.map((val: any) => {
+                                            return <li className={`border-2 ${(new Date().getTime() - new Date(val.original.lastActivity).getTime()) < 10000 ? 'border-green-500' : 'border-gray-500'} p-3 rounded-2xl cursor-pointer mt-2`}
+                                                onClick={() => {
+                                                    Router.push(`/dashboard/rig/${val.original.rig_id}`)
+                                                }}
+                                                key={val.original.rig_id}>
+                                                <div className="flex flex-row items-center">
+                                                    <div className="w-1/6">
+                                                        <p className="text-lg font-bold">{val.original.rig_name}</p>
+                                                        <p className="text-sm">0 -/s</p>
+                                                    </div>
+                                                    <div className="rounded-lg py-2 mx-2 w-5/6 h-12 bg-gray-800">
 
-                                                </div>
-                                                <div className="flex justify-end ml-4">
-                                                    <button className={`bg-red-500 rounded-full px-2 ${privilege === 'admin' || privilege === 'readAndWrite' ? 'hover:bg-red-600' : 'opacity-50 cursor-default'}`}
-                                                        disabled={privilege === 'admin' || privilege === 'readAndWrite' ? false : true} onClick={() => {
-                                                            withAuth(async (token: jwtObject) => {
-                                                                const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/deleteRig`, {
-                                                                    method: 'DELETE',
-                                                                    mode: 'cors',
-                                                                    body: JSON.stringify({
-                                                                        rig_id: val.original.rig_id,
-                                                                    }),
-                                                                    headers: {
-                                                                        Authorization: `Bearer ${token.jwt_token}`,
-                                                                    },
+                                                    </div>
+                                                    <div className="flex justify-end ml-4">
+                                                        <button className={`bg-red-500 rounded-full px-2 ${privilege === 'admin' || privilege === 'readAndWrite' ? 'hover:bg-red-600' : 'opacity-50 cursor-default'}`}
+                                                            disabled={privilege === 'admin' || privilege === 'readAndWrite' ? false : true} onClick={(e) => {
+                                                                e.preventDefault();
+                                                                e.stopPropagation();
+
+                                                                withAuth(async (token: jwtObject) => {
+                                                                    const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/deleteRig`, {
+                                                                        method: 'DELETE',
+                                                                        mode: 'cors',
+                                                                        body: JSON.stringify({
+                                                                            rig_id: val.original.rig_id,
+                                                                        }),
+                                                                        headers: {
+                                                                            Authorization: `Bearer ${token.jwt_token}`,
+                                                                        },
+                                                                    })
+
+                                                                    if (response.status == 200) {
+                                                                        setRigsData(rigsData.filter((rig: any) => rig.rig_id != val.original.rig_id))
+                                                                    }
                                                                 })
-
-                                                                if (response.status == 200) {
-                                                                    setRigsData(rigsData.filter((rig: any) => rig.rig_id != val.original.rig_id))
-                                                                }
-                                                            })
-                                                        }}>X</button>
+                                                            }}>X</button>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                        </li>
-                                    })
-                                }
-                            </ul>
-                        </div>
+                                            </li>
+                                        })
+                                    }
+                                </ul>
+                            </Content>
+                        </ContentContext.Provider>
                     </div>
 
                     {showCreateRigModal ?
                         <CreateRigModal setShowModal={setShowCreateRigModal} createRigSuccessHandler={(res: never) => {
+                            setShowCreateRigModal(false)
                             setRigsData([...rigsData, res])
                         }} /> : null
                     }

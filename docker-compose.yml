@@ -8,12 +8,13 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./frontend/:/usr/src/app
-      - /usr/src/app/node_modules
-      - /usr/src/app/.next
       - ./.env:/usr/src/.env
+      - ./docker_startup.sh:/usr/src/docker_startup.sh
+    command: "bash -C ../docker_startup.sh frontend ${ENV}"
+    restart: unless-stopped
     networks:
       - mineralos-network
-  backend:
+  backend_api:
     ports:
       - 5000:5000
     build:
@@ -21,6 +22,29 @@ services:
       dockerfile: Dockerfile      
     volumes:
       - ./:/go/src/github.com/laxamore/mineralos
+    command: "bash -C docker_startup.sh backend_api ${ENV}"
+    restart: unless-stopped
+    networks:
+      - mineralos-network
+  zmq_router:
+    ports:
+      - 9000:9000
+      - 9001:9001
+    build:
+      context: ./
+      dockerfile: Dockerfile      
+    volumes:
+      - ./:/go/src/github.com/laxamore/mineralos
+    command: "bash -C docker_startup.sh zmq_router ${ENV}"
+    networks:
+      - mineralos-network
+  zmq_worker:
+    build:
+      context: ./
+      dockerfile: Dockerfile      
+    volumes:
+      - ./:/go/src/github.com/laxamore/mineralos
+    command: "bash -C docker_startup.sh zmq_worker ${ENV}"
     networks:
       - mineralos-network
   mongodb:

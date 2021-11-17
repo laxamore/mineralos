@@ -9,7 +9,8 @@
     "server:dev": "reflex -r '\\.go$' -s -- sh -c 'go run server/main.go'",
     "server:start": "go run server/main.go",
     "server:build": "go build -o bin/server server/main.go",
-    "docker:dev": "docker-compose up"
+    "docker:start": "docker-compose up",
+    "docker:dev": "ENV=dev docker-compose up"
   },
   "repository": {
     "type": "git",

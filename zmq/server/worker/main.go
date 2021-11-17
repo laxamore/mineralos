@@ -95,6 +95,11 @@ func main() {
 	worker_public, worker_secret, err := zmq.NewCurveKeypair()
 	utils.CheckErr(err)
 
+	ROUTER_ENDPOINT := "127.0.0.1"
+	if os.Getenv("DOCKER") == "true" {
+		ROUTER_ENDPOINT = "zmq_router"
+	}
+
 	repo := db.MongoDB{}
 	cntrl := worker.WorkerController{
 		HEARTBEAT_LIVENESS: 3,
@@ -107,7 +112,7 @@ func main() {
 		PPP_HEARTBEAT: "\002",
 
 		// Connection Settings
-		CONNECTION_ENDPOINT: "tcp://127.0.0.1:9001",
+		CONNECTION_ENDPOINT: fmt.Sprintf("tcp://%s:9001", ROUTER_ENDPOINT),
 		SERVER_PUB_KEY:      "83<s>=wXS9RXKPR4wp:45?Pmo!y>R!qAy%^:^dDl",
 
 		WORKER_KEY:     worker_secret,

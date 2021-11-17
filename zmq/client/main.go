@@ -20,10 +20,10 @@ func main() {
 		REQUEST_TIMEOUT: 2500 * time.Millisecond, //  msecs, (> 1000!)
 		SERVER_ENDPOINT: "tcp://127.0.0.1:9000",
 
-		HEARTBEAT_INTERVAL: 1000 * time.Millisecond, //  msecs
-		RIG_ID:             "b073badf-c10f-4a94-9d04-e0bb35b26d18",
-		ClientKey:          "xOJ)9GNipQOkJWd7k^m:&fF9BSKlu0v73#JCyana",
-		ClientPubKey:       "i!OLA?M*RxcyAwZ{#Kvn+ri^F3x-H-lrki=5n6xP",
+		HEARTBEAT_INTERVAL: 100 * time.Millisecond, //  msecs
+		RIG_ID:             "56b1c9df-867f-4b17-b899-fcca4ab68232",
+		ClientKey:          "-GC{6aVX0Bw{ryfY804K!F>gWe{)1#ML@3j=ib[4",
+		ClientPubKey:       "IIV?kfy73WCH4+Tf(<N9HxM?Ken[ro(xTTt{C6F@",
 	}
 
 	Log.Print("Info: connecting to server...\n")

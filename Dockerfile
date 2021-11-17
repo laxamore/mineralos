@@ -19,7 +19,4 @@ RUN go get -d -v ./...
 RUN go install -v ./...
 RUN go install github.com/cespare/reflex@latest
 
-
 EXPOSE 5000
-
-CMD "./api-dev.sh"

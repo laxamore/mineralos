@@ -25,6 +25,7 @@ func main() {
 	router.POST("/api/v1/newRig", Middleware.CheckAuth, ApiRigs.NewRig)
 	router.DELETE("/api/v1/deleteRig", Middleware.CheckAuth, ApiRigs.DeleteRig)
 	router.GET("/api/v1/getRigs", Middleware.CheckAuth, ApiRigs.GetRigs)
+	router.GET("/api/v1/getRig/:rig_id", Middleware.CheckAuth, ApiRigs.GetRig)
 
 	router.POST("/api/v1/register", Middleware.BeforeRegister, ApiUsers.Register)
 	router.POST("/api/v1/registerToken", Middleware.VerifyAdmin, ApiUsers.RegisterToken)

@@ -8,6 +8,7 @@ import { ContentContext, RefreshContext } from "../../utils/context"
 import CreateRigModal from '../../components/modals/createRigModal'
 import { Column, useTable } from 'react-table'
 import Router from 'next/router'
+import { clearRefreshTimer } from '../../utils/refreshTimer'
 
 const isServer = () => typeof window === 'undefined';
 
@@ -20,8 +21,6 @@ const Dashboard: NextPage<Props> = ({ data }) => {
     const [privilege, setPrivilege] = useState('readOnly')
     const [showCreateRigModal, setShowCreateRigModal] = useState(false);
     const [rigsData, setRigsData] = useState([]);
-    const [refreshTimeout, setRefreshTimeout] = useContext(RefreshContext)
-    const [refreshTimerID, setRefreshTimerID] = useState<NodeJS.Timer>()
 
     interface rigsColumnInterface {
         status: string
@@ -50,32 +49,6 @@ const Dashboard: NextPage<Props> = ({ data }) => {
     ], []);
 
     useEffect(() => {
-        const refreshState = localStorage.getItem('refreshState');
-        setRefreshTimeout(refreshState === 'true')
-
-        if (refreshState === 'true' && refreshTimerID === undefined) {
-            setRefreshTimerID(setInterval(() => {
-                withAuth(async (token: jwtObject) => {
-                    const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/getRigs`, {
-                        method: 'GET',
-                        mode: 'cors',
-                        headers: {
-                            Authorization: `Bearer ${token.jwt_token}`
-                        }
-                    })
-
-                    if (response.status == 200) {
-                        const responseJSON = await response.json()
-                        setRigsData(responseJSON.rigs)
-                    }
-                })
-            }, 1000))
-        } else if (refreshState !== 'true' && refreshTimerID !== undefined) {
-            clearInterval(refreshTimerID);
-        }
-    }, [refreshTimeout])
-
-    useEffect(() => {
         checkAuth().then(auth => {
             if (auth) {
                 setIsAuth(true)
@@ -89,6 +62,8 @@ const Dashboard: NextPage<Props> = ({ data }) => {
         else {
             setRigsData(data.rigs)
         }
+
+        return () => { clearRefreshTimer() };
     }, [data.rigs])
 
     const tableInstance = useTable({ columns: columns, data: rigsData })
@@ -103,7 +78,22 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                     <Navbar />
                     <div className="flex flex-col justify-center items-center h-full w-full">
                         <ContentContext.Provider value={[setShowCreateRigModal]}>
-                            <Content showCreateButton={true} showRefreshButtonTimeout={true} showRefreshButton={true} privilege={privilege}>
+                            <Content showCreateButton={true} showRefreshButtonTimeout={true} showRefreshButton={true} privilege={privilege} refreshFunctionCallback={() => {
+                                withAuth(async (token: jwtObject) => {
+                                    const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/getRigs`, {
+                                        method: 'GET',
+                                        mode: 'cors',
+                                        headers: {
+                                            Authorization: `Bearer ${token.jwt_token}`
+                                        }
+                                    })
+
+                                    if (response.status == 200) {
+                                        const responseJSON = await response.json()
+                                        setRigsData(responseJSON.rigs)
+                                    }
+                                })
+                            }}>
                                 <ul className="mt-2">
                                     {
                                         rows.map((val: any) => {

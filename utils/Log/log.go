@@ -10,15 +10,15 @@ func Printf(format string, v ...interface{}) {
 	log.Printf(format, v...)
 }
 
-func Print(format string) {
-	log.Print(format)
+func Print(format ...interface{}) {
+	log.Print(format...)
 }
 
-func Panic(format string) {
+func Panic(format ...interface{}) {
 	if gin.Mode() == gin.TestMode {
-		log.Print(format)
+		log.Print(format...)
 	} else {
-		log.Panic(format)
+		log.Panic(format...)
 	}
 }
 

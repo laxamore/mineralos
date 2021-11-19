@@ -10,7 +10,8 @@
     "server:start": "go run server/main.go",
     "server:build": "go build -o bin/server server/main.go",
     "docker:start": "docker-compose up",
-    "docker:dev": "ENV=dev docker-compose up"
+    "docker:dev": "ENV=dev docker-compose up",
+    "build:client": "docker-compose run compile"
   },
   "repository": {
     "type": "git",

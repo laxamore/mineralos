@@ -1,12 +1,56 @@
 package main
 
 import (
+	"fmt"
+	"io/ioutil"
+	"os"
+	"strings"
+
 	"github.com/laxamore/mineralos/utils/Log"
 	"github.com/laxamore/mineralos/zmq/client/client"
 	zmq "github.com/pebbe/zmq4"
 
 	"time"
 )
+
+type rigConfig struct {
+	SERVER_PUBLIC_KEY string
+	RIG_ID            string
+	RIG_KEY           string
+	RIG_PUBLIC_KEY    string
+}
+
+func readConf() rigConfig {
+	file, err := os.Open(os.Args[1])
+
+	defer func() {
+		if err = file.Close(); err != nil {
+			Log.Panicf("%v", err)
+		}
+	}()
+
+	b, _ := ioutil.ReadAll(file)
+	rigConfString := string(b)
+
+	SERVER_PUBLIC_KEY := strings.Split(rigConfString, "SERVER_PUBLIC_KEY=")[1]
+	SERVER_PUBLIC_KEY = strings.Split(SERVER_PUBLIC_KEY, "\n")[0]
+
+	RIG_ID := strings.Split(rigConfString, "RIG_ID=")[1]
+	RIG_ID = strings.Split(RIG_ID, "\n")[0]
+
+	RIG_KEY := strings.Split(rigConfString, "RIG_KEY=")[1]
+	RIG_KEY = strings.Split(RIG_KEY, "\n")[0]
+
+	RIG_PUBLIC_KEY := strings.Split(rigConfString, "RIG_PUBLIC_KEY=")[1]
+	RIG_PUBLIC_KEY = strings.Split(RIG_PUBLIC_KEY, "\n")[0]
+
+	return rigConfig{
+		SERVER_PUBLIC_KEY: SERVER_PUBLIC_KEY,
+		RIG_ID:            RIG_ID,
+		RIG_KEY:           RIG_KEY,
+		RIG_PUBLIC_KEY:    RIG_PUBLIC_KEY,
+	}
+}
 
 func main() {
 	zmq.AuthSetVerbose(true)
@@ -16,14 +60,17 @@ func main() {
 	//  Tell the authenticator to allow any CURVE requests for this domain
 	zmq.AuthCurveAdd("*", "*")
 
+	RIG_CONF := readConf()
+
 	cntrl := client.ClientController{
 		REQUEST_TIMEOUT: 2500 * time.Millisecond, //  msecs, (> 1000!)
-		SERVER_ENDPOINT: "tcp://127.0.0.1:9000",
+		SERVER_ENDPOINT: fmt.Sprintf("tcp://%s:9000", os.Args[2]),
 
 		HEARTBEAT_INTERVAL: 100 * time.Millisecond, //  msecs
-		RIG_ID:             "56b1c9df-867f-4b17-b899-fcca4ab68232",
-		ClientKey:          "-GC{6aVX0Bw{ryfY804K!F>gWe{)1#ML@3j=ib[4",
-		ClientPubKey:       "IIV?kfy73WCH4+Tf(<N9HxM?Ken[ro(xTTt{C6F@",
+		RIG_ID:             RIG_CONF.RIG_ID,
+		ClientKey:          RIG_CONF.RIG_KEY,
+		ClientPubKey:       RIG_CONF.RIG_PUBLIC_KEY,
+		ServerPubKey:       RIG_CONF.SERVER_PUBLIC_KEY,
 	}
 
 	Log.Print("Info: connecting to server...\n")

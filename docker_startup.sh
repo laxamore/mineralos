@@ -1,10 +1,9 @@
-#!/bin/bash
+#!/bin/sh
 
 SERVICE=$1
 ENV=$2
 
-if [ "$ENV" == "dev" ]
-then
+if [ "$ENV" == "dev" ]; then
     case $SERVICE in
         frontend)        
         npm run dev
@@ -32,7 +31,7 @@ else
         go run zmq/server/router/main.go
         ;;
         zmq_worker)
-        go run zmq/server/router/main.go
+        go run zmq/server/worker/main.go
         ;;
     esac
 fi

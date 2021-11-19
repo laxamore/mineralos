@@ -1,5 +1,7 @@
 version: "3.9"
+
 services:
+
   frontend:
     ports:
       - 3000:3000
@@ -10,10 +12,11 @@ services:
       - ./frontend/:/usr/src/app
       - ./.env:/usr/src/.env
       - ./docker_startup.sh:/usr/src/docker_startup.sh
-    command: "bash -C ../docker_startup.sh frontend ${ENV}"
+    command: "sh -C ../docker_startup.sh frontend ${ENV}"
     restart: unless-stopped
     networks:
       - mineralos-network
+  
   backend_api:
     ports:
       - 5000:5000
@@ -22,10 +25,11 @@ services:
       dockerfile: Dockerfile      
     volumes:
       - ./:/go/src/github.com/laxamore/mineralos
-    command: "bash -C docker_startup.sh backend_api ${ENV}"
+    command: "sh -C docker_startup.sh backend_api ${ENV}"
     restart: unless-stopped
     networks:
       - mineralos-network
+  
   zmq_router:
     ports:
       - 9000:9000
@@ -35,18 +39,20 @@ services:
       dockerfile: Dockerfile      
     volumes:
       - ./:/go/src/github.com/laxamore/mineralos
-    command: "bash -C docker_startup.sh zmq_router ${ENV}"
+    command: "sh -C docker_startup.sh zmq_router ${ENV}"
     networks:
       - mineralos-network
+  
   zmq_worker:
     build:
       context: ./
       dockerfile: Dockerfile      
     volumes:
       - ./:/go/src/github.com/laxamore/mineralos
-    command: "bash -C docker_startup.sh zmq_worker ${ENV}"
+    command: "sh -C docker_startup.sh zmq_worker ${ENV}"
     networks:
       - mineralos-network
+  
   mongodb:
     ports:
       - 27017:27017
@@ -59,6 +65,15 @@ services:
     restart: unless-stopped
     networks:
       - mineralos-network
+
+  # For Static Compile ZMQ App
+  compile:
+    build:
+      context: ./
+      dockerfile: Dockerfile
+    volumes:
+      - ./:/go/src/github.com/laxamore/mineralos
+    command: "sh -C build.sh"
 
 networks:
   mineralos-network:

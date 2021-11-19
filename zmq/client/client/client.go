@@ -17,6 +17,7 @@ type ClientController struct {
 	RIG_ID             string
 	ClientKey          string
 	ClientPubKey       string
+	ServerPubKey       string
 }
 
 type Payload struct {
@@ -105,7 +106,7 @@ func (a ClientController) Client(client *zmq.Socket, poller *zmq.Poller) ([]byte
 
 func (a ClientController) NewClientConnection(client_public string, client_secret string) (soc *zmq.Socket, pol *zmq.Poller, err error) {
 	soc, err = zmq.NewSocket(zmq.REQ)
-	soc.ClientAuthCurve("83<s>=wXS9RXKPR4wp:45?Pmo!y>R!qAy%^:^dDl", client_public, client_secret)
+	soc.ClientAuthCurve(a.ServerPubKey, client_public, client_secret)
 	soc.Connect(a.SERVER_ENDPOINT)
 
 	// Recreate poller for new client

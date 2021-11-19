@@ -1,4 +1,4 @@
-FROM golang:1.17
+FROM golang:1.17.3-alpine3.13
 
 ENV DOCKER true
 
@@ -7,11 +7,8 @@ RUN mkdir -p /go/src/github.com/laxamore/mineralos
 WORKDIR /go/src/github.com/laxamore/mineralos
 
 # Installing zmq
-RUN apt install pkg-config -y
-RUN echo "deb http://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-stable/Debian_9.0/ ./" >> /etc/apt/sources.list
-RUN wget https://download.opensuse.org/repositories/network:/messaging:/zeromq:/release-stable/Debian_9.0/Release.key -O- | apt-key add
-RUN apt update -y
-RUN apt install libzmq3-dev -y
+# RUN apk add gcc libc-dev zeromq-dev libzmq
+RUN apk add musl-dev gcc g++ libsodium-static zeromq-dev libzmq-static libc-dev
 
 # Installing dependencies
 COPY . /go/src/github.com/laxamore/mineralos

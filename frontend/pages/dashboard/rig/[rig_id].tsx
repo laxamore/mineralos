@@ -4,7 +4,8 @@ import { useEffect, useState } from "react"
 import { checkAuth, getAuthPayload, jwtObject, withAuth } from "../../../utils/auth"
 import Navbar from '../../../components/navbar'
 import { Content } from '../../../components/content'
-import { ContentContext, RefreshContext } from "../../../utils/context"
+import { ContentContext } from "../../../utils/context"
+import { EyeIcon, EyeOffIcon } from "@heroicons/react/solid"
 
 
 const isServer = () => typeof window === 'undefined';
@@ -16,6 +17,7 @@ type Params = {
 const Rigs: NextPage<Params> = ({ data }) => {
     const [isAuth, setIsAuth] = useState(false)
     const [privilege, setPrivilege] = useState('readOnly')
+    const [showKey, setShowKey] = useState(false)
 
     useEffect(() => {
         if (data.status === 404) {
@@ -32,17 +34,41 @@ const Rigs: NextPage<Params> = ({ data }) => {
     }, [])
 
     return <div>
-        <Navbar />
+        {isAuth ?
+            <>
+                <Navbar />
 
-        <div className="flex flex-col justify-center items-center h-full w-full">
-            <ContentContext.Provider value={[]}>
-                <Content showRefreshButtonTimeout={true} showRefreshButton={true} privilege={privilege}>
-                    <div>
-                        <h1>hehe</h1>
-                    </div>
-                </Content>
-            </ContentContext.Provider>
-        </div>
+                <div className="flex flex-col justify-center items-center h-full w-full">
+                    <ContentContext.Provider value={[]}>
+                        <Content showRefreshButtonTimeout={true} showRefreshButton={true} privilege={privilege}>
+                            <div className="flex flex-col font-semibold px-8 py-4">
+                                <div className="flex flex-row">
+                                    <p className="w-32">RIG ID</p>
+                                    <p>: {data.rig_id}</p>
+                                </div>
+                                <div className="flex flex-row items-center">
+                                    <div className="flex flex-col">
+                                        <div className="flex flex-row">
+                                            <p className="w-32">RIG Key</p>
+                                            <p className={`${!showKey ? 'tracking-tight' : ''}`}>: {showKey ? data.key : "∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗"}</p>
+                                        </div>
+                                        <div className="flex flex-row">
+                                            <p className="w-32">RIG Public Key</p>
+                                            <p className={`${!showKey ? 'tracking-tight' : ''}`}>: {showKey ? data.pubkey : "∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗∗"}</p>
+                                        </div>
+                                    </div>
+                                    <div className="w-6 mx-4 cursor-pointer" onClick={() => setShowKey(!showKey)}>
+                                        {
+                                            showKey ? <EyeOffIcon /> : <EyeIcon />
+                                        }
+                                    </div>
+                                </div>
+                            </div>
+                        </Content>
+                    </ContentContext.Provider>
+                </div>
+            </>
+            : null}
     </div>
 }
 

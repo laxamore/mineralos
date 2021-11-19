@@ -2,6 +2,7 @@ import { clearAuthToken, jwtObject, withAuth } from "../utils/auth"
 import styles from "./navbar.module.css"
 import Router from "next/router"
 import { FC } from "react"
+import Link from 'next/link'
 
 const Navbar: FC = () => {
     const logoutHandler = () => {
@@ -25,11 +26,31 @@ const Navbar: FC = () => {
     return <div className="sticky flex flex-row items-center w-full top-0 left-0 h-14 bg-gray-700 text-gray-200">
         <span className="px-8 font-extrabold text-xl">MineralOS</span>
         <ul className={`flex flex-row justify-end w-full mx-16 font-bold ${styles.menu}`}>
-            <li>Rigs</li>
-            <li>Overclocking</li>
-            <li>Wallets</li>
-            <li>Miners</li>
-            <li>Settings</li>
+            <li>
+                <Link href="/dashboard">
+                    <a>Rigs</a>
+                </Link>
+            </li>
+            <li>
+                <Link href="/overclocking">
+                    <a>Overclokcing</a>
+                </Link>
+            </li>
+            <li>
+                <Link href="/wallets">
+                    <a>Wallets</a>
+                </Link>
+            </li>
+            <li>
+                <Link href="/miners">
+                    <a>Miners</a>
+                </Link>
+            </li>
+            <li>
+                <Link href="/settings">
+                    <a>Settings</a>
+                </Link>
+            </li>
         </ul>
         <span className="px-8 font-extrabold text-red-500 hover:text-red-600 cursor-pointer" onClick={logoutHandler}>Logout</span>
     </div>

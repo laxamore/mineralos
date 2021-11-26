@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/laxamore/mineralos/api"
+	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
 	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"

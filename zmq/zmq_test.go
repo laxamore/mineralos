@@ -7,7 +7,7 @@ import (
 	"github.com/go-playground/assert/v2"
 	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
-	"github.com/laxamore/mineralos/zmq/client/client"
+	"github.com/laxamore/mineralos/zmq/client"
 	"github.com/laxamore/mineralos/zmq/server/router/router"
 	"github.com/laxamore/mineralos/zmq/server/worker/worker"
 	zmq "github.com/pebbe/zmq4"
@@ -127,6 +127,7 @@ func clientHandler() (res string) {
 		RIG_ID:             "b073badf-c10f-4a94-9d04-e0bb35b26d18",
 		ClientKey:          "xOJ)9GNipQOkJWd7k^m:&fF9BSKlu0v73#JCyana",
 		ClientPubKey:       "i!OLA?M*RxcyAwZ{#Kvn+ri^F3x-H-lrki=5n6xP",
+		ServerPubKey:       "83<s>=wXS9RXKPR4wp:45?Pmo!y>R!qAy%^:^dDl",
 	}
 
 	client, poller, err := cntrl.NewClientConnection(cntrl.ClientPubKey, cntrl.ClientKey)

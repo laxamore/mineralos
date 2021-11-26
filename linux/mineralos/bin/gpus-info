@@ -2,6 +2,9 @@
 
 clear
 
+AMD_DRIVER_VERSION=$(pacman -Qi opencl-amd | grep Version | cut -d':' -f 2 | awk '{ sub(/^[ \t]+/, ""); print }')
+NVIDIA_DRIVER_VERSION=$(pacman -Qi nvidia | grep Version | cut -d':' -f 2 | awk '{ sub(/^[ \t]+/, ""); print }')
+
 GPUS_VENDOR=()
 GPUS_NAME=()
 GPUS_MEMORYS=()
@@ -44,7 +47,7 @@ function nvidia() {
 }
 
 echo =============================================================
-echo
+printf "NVIDIA: %s\tAMD: %s\n" "$NVIDIA_DRIVER_VERSION" "$AMD_DRIVER_VERSION"
 
 for ((i=0; i < ${#lshwData[@]}; i++)) do
     VENDOR=$(echo ${lshwData[$i]} | jq '.vendor' | awk '{
@@ -75,14 +78,14 @@ done
 
 echo =============================================================
 
-echo "[" > /mineralos/srv/gpus.json
+echo "[" > /mineralos/srv/gpus/gpus.json
 for ((i=0; i < ${#GPUS_VENDOR[@]}; i++)) {
-    printf "\t{\n\t\t\"gpu_vendor\":\"%s\",\n\t\t\"gpu_name\":\"%s\",\n\t\t\"memory_size\":\"%s\"\n\t}" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}" >> /mineralos/srv/gpus.json
+    printf "\t{\n\t\t\"gpu_vendor\":\"%s\",\n\t\t\"gpu_name\":\"%s\",\n\t\t\"memory_size\":\"%s\"\n\t}" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}" >> /mineralos/srv/gpus/gpus.json
 
     if (($i != (${#GPUS_VENDOR[@]} - 1))); then
-        echo "," >> /mineralos/srv/gpus.json
+        echo "," >> /mineralos/srv/gpus/gpus.json
     else
-        echo >> /mineralos/srv/gpus.json
+        echo >> /mineralos/srv/gpus/gpus.json
     fi
 }
-echo "]" >> /mineralos/srv/gpus.json
+echo "]" >> /mineralos/srv/gpus/gpus.json

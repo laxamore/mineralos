@@ -10,7 +10,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt"
-	"github.com/laxamore/mineralos/api"
+	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
 	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/JWT"

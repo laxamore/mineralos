@@ -6,7 +6,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
-	"github.com/laxamore/mineralos/api"
+	"github.com/laxamore/mineralos/api/api"
 )
 
 func Logout(c *gin.Context) {

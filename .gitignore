@@ -4,3 +4,5 @@
 .key
 .pem
 .vscode/
+
+!linux/mineralos/bin

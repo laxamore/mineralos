@@ -12,6 +12,12 @@ require (
 )
 
 require (
+	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
+	github.com/mitchellh/go-homedir v1.0.0 // indirect
+	github.com/sevlyar/go-daemon v0.1.5 // indirect
+)
+
+require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.1.1 // indirect

@@ -2,13 +2,11 @@
   "name": "mineralos",
   "version": "1.0.0",
   "scripts": {
-    "api:dev": "reflex -r '\\.go$' -s -- sh -c 'go run main.go'",
-    "api:start": "go run main.go",
-    "api:build": "go build -o bin/",
+    "api:dev": "reflex -r '\\.go$' -s -- sh -c 'go run api/api.go'",
+    "api:start": "go run api/api.go",
     "api:test": "./api-test.sh",
-    "server:dev": "reflex -r '\\.go$' -s -- sh -c 'go run server/main.go'",
-    "server:start": "go run server/main.go",
-    "server:build": "go build -o bin/server server/main.go",
+    "router:dev": "reflex -r '\\.go$' -s -- sh -c 'go run router/router.go'",
+    "worker:dev": "reflex -r '\\.go$' -s -- sh -c 'go run worker/worker.go'",
     "docker:start": "docker-compose up",
     "docker:dev": "ENV=dev docker-compose up",
     "build:client": "docker-compose run compile"

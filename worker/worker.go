@@ -35,7 +35,7 @@ func handlePayload(msg []string, mongoClient *mongo.Client, repositoryInterface 
 	var clientPayload Payload
 	json.Unmarshal([]byte(msg[2]), &clientPayload)
 
-	res := repositoryInterface.FindOne(mongoClient, os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+	res := repositoryInterface.FindOne(mongoClient, "mineralos", "rigs", bson.D{
 		{
 			Key: "rig_id", Value: clientPayload.RigID,
 		},
@@ -53,7 +53,7 @@ func handlePayload(msg []string, mongoClient *mongo.Client, repositoryInterface 
 			},
 		}
 
-		_, err := repositoryInterface.UpdateOne(mongoClient, os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+		_, err := repositoryInterface.UpdateOne(mongoClient, "mineralos", "rigs", bson.D{
 			{
 				Key: "rig_id", Value: clientPayload.RigID,
 			},
@@ -95,7 +95,7 @@ func main() {
 	worker_public, worker_secret, err := zmq.NewCurveKeypair()
 	utils.CheckErr(err)
 
-	ROUTER_ENDPOINT := "127.0.0.1"
+	ROUTER_ENDPOINT := os.Getenv("ZMQ_ROUTER_ENDPOINT")
 	if os.Getenv("DOCKER") == "true" {
 		ROUTER_ENDPOINT = "zmq_router"
 	}
@@ -113,7 +113,7 @@ func main() {
 
 		// Connection Settings
 		CONNECTION_ENDPOINT: fmt.Sprintf("tcp://%s:9001", ROUTER_ENDPOINT),
-		SERVER_PUB_KEY:      "83<s>=wXS9RXKPR4wp:45?Pmo!y>R!qAy%^:^dDl",
+		SERVER_PUB_KEY:      os.Getenv("SERVER_PUBKEY"),
 
 		WORKER_KEY:     worker_secret,
 		WORKER_PUB_KEY: worker_public,

@@ -9,13 +9,13 @@ if [ "$ENV" == "dev" ]; then
         npm run dev
         ;;
         backend_api)
-        reflex -r '\.go$' -s -- sh -c 'go run main.go'
+        reflex -r '\.go$' -s -- sh -c 'go run api/api.go'
         ;;
         zmq_router)
-        reflex -r '\.go$' -s -- sh -c 'go run zmq/server/router/main.go'
+        reflex -r '\.go$' -s -- sh -c 'go run router/router.go'
         ;;
         zmq_worker)
-        reflex -r '\.go$' -s -- sh -c 'go run zmq/server/worker/main.go'
+        reflex -r '\.go$' -s -- sh -c 'go run worker/worker.go'
         ;;
     esac
 else  
@@ -25,13 +25,13 @@ else
         npm run start
         ;;
         backend_api)
-        go run main.go
+        go run api/api.go
         ;;
         zmq_router)
-        go run zmq/server/router/main.go
+        go run router/router.go
         ;;
         zmq_worker)
-        go run zmq/server/worker/main.go
+        go run worker/worker.go
         ;;
     esac
 fi

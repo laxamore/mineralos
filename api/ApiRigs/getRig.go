@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/laxamore/mineralos/api"
+	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
 	"github.com/laxamore/mineralos/utils"
 	"go.mongodb.org/mongo-driver/bson"

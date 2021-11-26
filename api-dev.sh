@@ -1,3 +1,3 @@
 #!/bin/bash
 
-reflex -r '\.go$' -s -- sh -c 'go run main.go'
+reflex -r '\.go$' -s -- sh -c 'go run api/api.go'

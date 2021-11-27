@@ -32,22 +32,22 @@ const Navbar: FC = () => {
                 </Link>
             </li>
             <li>
-                <Link href="/overclocking">
+                <Link href="/dashboard/overclocking">
                     <a>Overclokcing</a>
                 </Link>
             </li>
             <li>
-                <Link href="/wallets">
+                <Link href="/dashboard/wallets">
                     <a>Wallets</a>
                 </Link>
             </li>
             <li>
-                <Link href="/miners">
+                <Link href="/dashboard/miners">
                     <a>Miners</a>
                 </Link>
             </li>
             <li>
-                <Link href="/settings">
+                <Link href="/dashboard/settings">
                     <a>Settings</a>
                 </Link>
             </li>

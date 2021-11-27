@@ -27,6 +27,10 @@ func main() {
 	router.GET("/api/v1/getRigs", Middleware.CheckAuth, ApiRigs.GetRigs)
 	router.GET("/api/v1/getRig/:rig_id", Middleware.CheckAuth, ApiRigs.GetRig)
 
+	router.POST("/api/v1/newWallet", Middleware.CheckAuth, ApiRigs.NewWallet)
+	router.DELETE("/api/v1/deleteWallet", Middleware.CheckAuth, ApiRigs.DeleteWallet)
+	router.GET("/api/v1/getWallets", Middleware.CheckAuth, ApiRigs.GetWallets)
+
 	router.POST("/api/v1/register", Middleware.BeforeRegister, ApiUsers.Register)
 	router.POST("/api/v1/registerToken", Middleware.VerifyAdmin, ApiUsers.RegisterToken)
 	router.POST("/api/v1/login", ApiUsers.Login)

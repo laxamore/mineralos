@@ -7,15 +7,16 @@ import { clearRefreshTimer, setRefreshTimerCallback } from "../utils/refreshTime
 type Params = {
     privilege: string
     showCreateButton?: boolean
+    createButtonName?: string
     showRefreshButton: boolean
-    showRefreshButtonTimeout: boolean
+    showRefreshButtonTimeout?: boolean
     refreshFunctionCallback?: Function
     children?: React.ReactNode
 }
 
 
-export const Content: FC<Params> = ({ children, privilege, showCreateButton, showRefreshButton, showRefreshButtonTimeout, refreshFunctionCallback }) => {
-    const [setShowCreateRigModal] = useContext(ContentContext);
+export const Content: FC<Params> = ({ children, privilege, showCreateButton, createButtonName, showRefreshButton, showRefreshButtonTimeout, refreshFunctionCallback }) => {
+    const [setShowCreateModal] = useContext(ContentContext);
     const [refreshState, setRefreshState] = useState(false)
 
     useEffect(() => {
@@ -36,10 +37,10 @@ export const Content: FC<Params> = ({ children, privilege, showCreateButton, sho
                 showCreateButton ?
                     <button className={`p-2 bg-blue-600 rounded-lg ${privilege === 'admin' || privilege === 'readAndWrite' ? 'hover:bg-blue-700' : 'opacity-50 cursor-default'}`}
                         onClick={() => {
-                            setShowCreateRigModal(true)
+                            setShowCreateModal(true)
                         }}
                         disabled={privilege === 'admin' || privilege === 'readAndWrite' ? false : true}>
-                        Create New Rig
+                        {createButtonName}
                     </button> : null
             }
             <div className="flex flex-grow justify-end">
@@ -47,7 +48,7 @@ export const Content: FC<Params> = ({ children, privilege, showCreateButton, sho
                     showRefreshButton ?
                         <RefreshIcon className={`justify-end p-2 w-8 h-8 mx-2 bg-blue-600 rounded-lg hover:bg-blue-700 cursor-pointer select-none`}
                             onClick={() => {
-                                setShowCreateRigModal(true)
+                                setShowCreateModal(true)
                             }}>
                         </RefreshIcon> : null
                 }

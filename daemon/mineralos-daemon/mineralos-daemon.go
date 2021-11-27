@@ -5,6 +5,8 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"os/exec"
+	"strconv"
 	"strings"
 	"syscall"
 
@@ -16,6 +18,8 @@ import (
 
 	"time"
 )
+
+const logFileName = "/mineralos/var/log/mineralos.log"
 
 type rigConfig struct {
 	SERVER_IP         string
@@ -61,9 +65,17 @@ func readConf() rigConfig {
 	}
 }
 
-// func readGPUS() {
+func checkLogSize() int {
+	duCommand := exec.Command("bash", "-c", fmt.Sprintf("du -b %s | awk '{printf \"%s\", $1}'", logFileName, "%s"))
+	duCommandOutput, _ := duCommand.Output()
 
-// }
+	logSize, err := strconv.Atoi(string(duCommandOutput))
+	if err != nil {
+		log.Fatalf("Unable to get log size: %s", err.Error())
+	}
+
+	return logSize
+}
 
 func main() {
 	daemon.SetSigHandler(termHandler, syscall.SIGTERM)
@@ -73,7 +85,7 @@ func main() {
 	cntxt := &daemon.Context{
 		PidFileName: "/mineralos/var/tmp/mineralos.pid",
 		PidFilePerm: 0644,
-		LogFileName: "/mineralos/var/log/mineralos.log",
+		LogFileName: logFileName,
 		LogFilePerm: 0640,
 		WorkDir:     "/mineralos",
 	}
@@ -90,7 +102,15 @@ func main() {
 	log.Println("- - - - - - - - - - - - - - -")
 	log.Println("daemon started")
 
+	lf, err := NewLogFile(logFileName, os.Stderr)
+	if err != nil {
+		log.Fatalf("Unable to create log file: %s", err.Error())
+	}
+
+	log.SetOutput(lf)
+
 	go zmq_client()
+	go logRotation(lf)
 
 	err = daemon.ServeSignals()
 	if err != nil {
@@ -101,8 +121,9 @@ func main() {
 }
 
 var (
-	stop = make(chan struct{})
-	done = make(chan struct{})
+	stopZMQClient   = make(chan int)
+	stopLogRotation = make(chan int)
+	doneZMQClient   = make(chan int)
 )
 
 func zmq_client() {
@@ -129,7 +150,7 @@ func zmq_client() {
 		ClientKey:          RIG_CONF.RIG_KEY,
 		ClientPubKey:       RIG_CONF.RIG_PUBLIC_KEY,
 		ServerPubKey:       RIG_CONF.SERVER_PUBLIC_KEY,
-		DisableLog:         true,
+		DisableLog:         false,
 	}
 
 	// Log.Print("Info: connecting to server...\n")
@@ -154,20 +175,42 @@ LOOP:
 			client.SendMessage(lastPayload)
 		}
 
+		time.Sleep(time.Second)
+
 		select {
-		case <-stop:
+		case <-stopZMQClient:
 			break LOOP
 		default:
 		}
 	}
-	done <- struct{}{}
+	doneZMQClient <- 0
+}
+
+func logRotation(lf *LogFile) {
+LOOP:
+	for {
+		if logSize := checkLogSize(); logSize > 5000*1000 {
+			if err := lf.Rotate(); err != nil {
+				log.Fatalf("Unable to rotate log: %s", err.Error())
+			}
+		}
+		time.Sleep(time.Second)
+		select {
+		case <-stopLogRotation:
+			break LOOP
+		default:
+		}
+	}
 }
 
 func termHandler(sig os.Signal) error {
 	log.Println("terminating...")
-	stop <- struct{}{}
+
+	stopZMQClient <- 0
+	stopLogRotation <- 0
+
 	if sig == syscall.SIGQUIT {
-		<-done
+		<-doneZMQClient
 	}
 	return daemon.ErrStop
 }

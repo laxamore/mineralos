@@ -56,11 +56,11 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                 setPrivilege(authPayload.privilege)
             }
         })
-        if (data.rigs === null) {
-            setRigsData([])
+        if (data.rigs) {
+            setRigsData(data.rigs)
         }
         else {
-            setRigsData(data.rigs)
+            setRigsData([])
         }
 
         return () => { clearRefreshTimer() };
@@ -78,7 +78,7 @@ const Dashboard: NextPage<Props> = ({ data }) => {
                     <Navbar />
                     <div className="flex flex-col justify-center items-center h-full w-full">
                         <ContentContext.Provider value={[setShowCreateRigModal]}>
-                            <Content showCreateButton={true} showRefreshButtonTimeout={true} showRefreshButton={true} privilege={privilege} refreshFunctionCallback={() => {
+                            <Content showCreateButton={true} createButtonName={"Create New Rig"} showRefreshButtonTimeout={true} showRefreshButton={true} privilege={privilege} refreshFunctionCallback={() => {
                                 withAuth(async (token: jwtObject) => {
                                     const response = await fetch(`${process.env.API_ENDPOINT}/api/v1/getRigs`, {
                                         method: 'GET',

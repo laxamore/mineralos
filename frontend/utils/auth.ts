@@ -25,30 +25,40 @@ export function login(jwt: { jwt_token: string, jwt_token_expiry: number }, noRe
 export function checkAuth(ssr?: boolean, rtoken_cookies?: string) {
     return new Promise(async (resolve) => {
         if ((inMemoryToken.jwt_token_expiry * 1000) < (Date.now() + 10000)) {
-            let options: RequestInit = {
-                method: 'POST',
-                mode: 'cors',
-                cache: 'no-cache',
-                credentials: 'include',
-            }
+            const cookiesExist = ssr ? rtoken_cookies : doesHttpOnlyCookieExist("rtoken");
 
-            if (ssr) {
-                options.headers = {
-                    Cookie: `rtoken=${rtoken_cookies}`
+            if (cookiesExist) {
+                let options: RequestInit = {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'no-cache',
+                    credentials: 'include',
+                }
+
+                if (ssr) {
+                    options.headers = {
+                        Cookie: `rtoken=${rtoken_cookies}`
+                    }
+                }
+
+                const response = await fetch(`${ssr ? process.env.API_ENDPOINT_SSR : process.env.API_ENDPOINT}/api/v1/refreshToken`, options)
+                const responseJSON = await response.json()
+
+                if (responseJSON.jwt_token) {
+                    inMemoryToken = responseJSON
+                    resolve(inMemoryToken)
+                }
+                else if (!ssr) {
+                    Router.push("/login")
+                }
+                else {
+                    resolve(false);
                 }
             }
-
-            const response = await fetch(`${ssr ? process.env.API_ENDPOINT_SSR : process.env.API_ENDPOINT}/api/v1/refreshToken`, options)
-            const responseJSON = await response.json()
-
-            if (responseJSON.jwt_token) {
-                inMemoryToken = responseJSON
-                resolve(inMemoryToken)
-            }
-            else if (!ssr) {
-                Router.push("/login")
-            }
             else {
+                if (!ssr) {
+                    Router.push("/login")
+                }
                 resolve(false);
             }
         }
@@ -85,4 +95,13 @@ export function clearAuthToken() {
 export function getAuthPayload() {
     const encodedPayload = inMemoryToken.jwt_token.split('.')[1]
     return JSON.parse(Buffer.from(encodedPayload, 'base64').toString())
+}
+
+const doesHttpOnlyCookieExist = (cookiename: string) => {
+    var d = new Date();
+    d.setTime(d.getTime() + (1000));
+    var expires = "expires=" + d.toUTCString();
+
+    document.cookie = cookiename + "=new_value;path=/;" + expires;
+    return document.cookie.indexOf(cookiename + '=') == -1;
 }

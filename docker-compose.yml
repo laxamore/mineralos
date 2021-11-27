@@ -12,7 +12,7 @@ services:
       - ./frontend/:/usr/src/app
       - ./.env:/usr/src/.env
       - ./docker_startup.sh:/usr/src/docker_startup.sh
-    command: "sh -C ../docker_startup.sh frontend ${ENV}"
+    command: "bash ../docker_startup.sh frontend ${ENV}"
     restart: unless-stopped
     networks:
       - mineralos-network
@@ -25,7 +25,7 @@ services:
       dockerfile: Dockerfile      
     volumes:
       - ./:/go/src/github.com/laxamore/mineralos
-    command: "sh -C docker_startup.sh backend_api ${ENV}"
+    command: "sh docker_startup.sh backend_api ${ENV}"
     restart: unless-stopped
     networks:
       - mineralos-network
@@ -39,7 +39,7 @@ services:
       dockerfile: Dockerfile      
     volumes:
       - ./:/go/src/github.com/laxamore/mineralos
-    command: "sh -C docker_startup.sh zmq_router ${ENV}"
+    command: "sh docker_startup.sh zmq_router ${ENV}"
     networks:
       - mineralos-network
   
@@ -49,7 +49,7 @@ services:
       dockerfile: Dockerfile      
     volumes:
       - ./:/go/src/github.com/laxamore/mineralos
-    command: "sh -C docker_startup.sh zmq_worker ${ENV}"
+    command: "sh docker_startup.sh zmq_worker ${ENV}"
     networks:
       - mineralos-network
   
@@ -73,7 +73,7 @@ services:
       dockerfile: Dockerfile
     volumes:
       - ./:/go/src/github.com/laxamore/mineralos
-    command: "sh -C build.sh"
+    command: "sh build.sh"
 
 networks:
   mineralos-network:

@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,11 +11,13 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/laxamore/mineralos/daemon/utils"
+	"github.com/laxamore/mineralos/grpc/grpc_type"
+	"github.com/laxamore/mineralos/grpc/handler/client"
+	pb "github.com/laxamore/mineralos/grpc/mineralos_proto"
+	"github.com/laxamore/mineralos/utils/Linux"
 	"github.com/laxamore/mineralos/utils/Log"
-	"github.com/laxamore/mineralos/zmq/client"
-	zmq "github.com/pebbe/zmq4"
 	"github.com/sevlyar/go-daemon"
+	"google.golang.org/grpc"
 
 	"time"
 )
@@ -109,7 +112,7 @@ func main() {
 
 	log.SetOutput(lf)
 
-	go zmq_client()
+	go grpc_client()
 	go logRotation(lf)
 
 	err = daemon.ServeSignals()
@@ -126,56 +129,44 @@ var (
 	doneZMQClient   = make(chan int)
 )
 
-func zmq_client() {
-	drivers, err := utils.GetGPUDriverVersion()
+func grpc_client() {
+	drivers, err := Linux.GetGPUDriverVersion()
 	if err != nil {
 		Log.Print(err)
 	}
 
-	zmq.AuthSetVerbose(true)
-	zmq.AuthStart()
-	defer zmq.AuthStop()
-
-	//  Tell the authenticator to allow any CURVE requests for this domain
-	zmq.AuthCurveAdd("*", "*")
+	// gpus, err := utils.GetGPU()
+	// if err != nil {
+	// 	Log.Print(err)
+	// }
 
 	RIG_CONF := readConf()
 
-	cntrl := client.ClientController{
-		REQUEST_TIMEOUT: 2500 * time.Millisecond, //  msecs, (> 1000!)
-		SERVER_ENDPOINT: fmt.Sprintf("tcp://%s:9000", RIG_CONF.SERVER_IP),
-
-		HEARTBEAT_INTERVAL: 100 * time.Millisecond, //  msecs
-		RIG_ID:             RIG_CONF.RIG_ID,
-		ClientKey:          RIG_CONF.RIG_KEY,
-		ClientPubKey:       RIG_CONF.RIG_PUBLIC_KEY,
-		ServerPubKey:       RIG_CONF.SERVER_PUBLIC_KEY,
-		DisableLog:         false,
-	}
-
-	// Log.Print("Info: connecting to server...\n")
-	client, poller, err := cntrl.NewClientConnection(cntrl.ClientPubKey, cntrl.ClientKey)
+	// Set up a connection to the server.
+	conn, err := grpc.Dial(fmt.Sprintf("%s:9000", RIG_CONF.SERVER_IP), grpc.WithInsecure(), grpc.WithBlock())
 	if err != nil {
-		panic(err)
+		log.Fatalf("did not connect: %v", err)
 	}
+	defer conn.Close()
+	c := pb.NewMineralosClient(conn)
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	cntrl := client.ClientController{}
 
 LOOP:
 	for {
-		cntrl.PayloadStatus.Drivers = drivers
-
-		lastPayload, _, err := cntrl.Client(client, poller)
-		if err != nil {
-			// Log.Printf("waring: no response from server retrying...")
-
-			//  Old socket is confused; close it and open a new one
-			client.Close()
-			client, poller, _ = cntrl.NewClientConnection(cntrl.ClientPubKey, cntrl.ClientKey)
-
-			//  Send request again, on new socket
-			client.SendMessage(lastPayload)
+		clientPayload := grpc_type.ClientPayload{
+			Drivers: Linux.GPUDriverVersion{
+				AMD:    drivers.AMD,
+				NVIDIA: drivers.NVIDIA,
+			},
+			RigID: RIG_CONF.RIG_ID,
 		}
 
-		time.Sleep(time.Second)
+		cntrl.TryClient(c, ctx, clientPayload)
+		time.Sleep(time.Millisecond * 100)
 
 		select {
 		case <-stopZMQClient:

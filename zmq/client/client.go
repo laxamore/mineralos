@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/laxamore/mineralos/daemon/utils"
+	"github.com/laxamore/mineralos/utils/Linux"
 	"github.com/laxamore/mineralos/utils/Log"
 	zmq "github.com/pebbe/zmq4"
 )
@@ -24,7 +24,8 @@ type ClientController struct {
 }
 
 type PayloadStatus struct {
-	Drivers utils.GPUDriverVersion
+	Drivers Linux.GPUDriverVersion
+	GPUS    []Linux.GPU
 }
 
 type Payload struct {
@@ -107,6 +108,9 @@ func (a ClientController) NewClientConnection(client_public string, client_secre
 	soc, err = zmq.NewSocket(zmq.REQ)
 	soc.ClientAuthCurve(a.ServerPubKey, client_public, client_secret)
 	soc.Connect(a.SERVER_ENDPOINT)
+	soc.SetLinger(0)
+	soc.SetRcvhwm(1)
+	soc.SetSndhwm(1)
 
 	// Recreate poller for new client
 	pol = zmq.NewPoller()

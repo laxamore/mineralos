@@ -1,11 +1,9 @@
 package ApiRigs
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
@@ -71,14 +69,11 @@ func (a DeleteWalletController) TryDeleteWallet(c *gin.Context, client *mongo.Cl
 	c.JSON(response.Code, response.Response)
 }
 
-func DeleteWallet(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := db.MongoClient(ctx)
-	utils.CheckErr(err)
+func DeleteWallet(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		repo := db.MongoDB{}
+		cntrl := DeleteWalletController{}
 
-	repo := db.MongoDB{}
-	cntrl := DeleteWalletController{}
-
-	cntrl.TryDeleteWallet(c, client, repo)
+		cntrl.TryDeleteWallet(c, client, repo)
+	}
 }

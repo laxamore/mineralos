@@ -1,7 +1,6 @@
 package ApiUsers
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -16,7 +15,6 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
-	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/JWT"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
@@ -117,14 +115,11 @@ func (a LoginController) TryLogin(c *gin.Context, client *mongo.Client, reposito
 	c.JSON(response.Code, response.Response)
 }
 
-func Login(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := db.MongoClient(ctx)
-	utils.CheckErr(err)
+func Login(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		repo := db.MongoDB{}
+		cntrl := LoginController{}
 
-	repo := db.MongoDB{}
-	cntrl := LoginController{}
-
-	cntrl.TryLogin(c, client, repo)
+		cntrl.TryLogin(c, client, repo)
+	}
 }

@@ -1,7 +1,6 @@
 package ApiUsers
 
 import (
-	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"encoding/json"
@@ -11,12 +10,10 @@ import (
 	"net/mail"
 	"os"
 	"regexp"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
-	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -183,14 +180,11 @@ func (a RegisterController) TryRegister(c *gin.Context, client *mongo.Client, re
 	}
 }
 
-func Register(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := db.MongoClient(ctx)
-	utils.CheckErr(err)
+func Register(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		repo := db.MongoDB{}
+		cntrl := RegisterController{}
 
-	repo := db.MongoDB{}
-	cntrl := RegisterController{}
-
-	cntrl.TryRegister(c, client, repo)
+		cntrl.TryRegister(c, client, repo)
+	}
 }

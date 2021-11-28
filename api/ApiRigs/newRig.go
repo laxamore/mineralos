@@ -1,17 +1,14 @@
 package ApiRigs
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
-	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"github.com/pebbe/zmq4"
 
@@ -91,14 +88,11 @@ func (a *NewRigController) TryNewRig(c *gin.Context, client *mongo.Client, repos
 	c.JSON(response.Code, response.Response)
 }
 
-func NewRig(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := db.MongoClient(ctx)
-	utils.CheckErr(err)
+func NewRig(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		repo := db.MongoDB{}
+		cntrl := NewRigController{}
 
-	repo := db.MongoDB{}
-	cntrl := NewRigController{}
-
-	cntrl.TryNewRig(c, client, repo)
+		cntrl.TryNewRig(c, client, repo)
+	}
 }

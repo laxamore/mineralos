@@ -1,15 +1,12 @@
 package ApiRigs
 
 import (
-	"context"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
-	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -41,14 +38,11 @@ func (a GetRigsController) TryGetRigs(c *gin.Context, client *mongo.Client, repo
 	c.JSON(response.Code, response.Response)
 }
 
-func GetRigs(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := db.MongoClient(ctx)
-	utils.CheckErr(err)
+func GetRigs(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		repo := db.MongoDB{}
+		cntrl := GetRigsController{}
 
-	repo := db.MongoDB{}
-	cntrl := GetRigsController{}
-
-	cntrl.TryGetRigs(c, client, repo)
+		cntrl.TryGetRigs(c, client, repo)
+	}
 }

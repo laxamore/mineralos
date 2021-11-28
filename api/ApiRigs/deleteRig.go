@@ -1,16 +1,13 @@
 package ApiRigs
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
-	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 
 	"github.com/gin-gonic/gin"
@@ -68,14 +65,11 @@ func (a DeleteRigController) TryDeleteRig(c *gin.Context, client *mongo.Client, 
 	c.JSON(response.Code, response.Response)
 }
 
-func DeleteRig(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := db.MongoClient(ctx)
-	utils.CheckErr(err)
+func DeleteRig(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		repo := db.MongoDB{}
+		cntrl := DeleteRigController{}
 
-	repo := db.MongoDB{}
-	cntrl := DeleteRigController{}
-
-	cntrl.TryDeleteRig(c, client, repo)
+		cntrl.TryDeleteRig(c, client, repo)
+	}
 }

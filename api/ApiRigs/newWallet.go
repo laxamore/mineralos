@@ -1,16 +1,13 @@
 package ApiRigs
 
 import (
-	"context"
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
-	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -76,14 +73,11 @@ func (a NewWalletController) TryNewWallet(c *gin.Context, client *mongo.Client, 
 	c.JSON(response.Code, response.Response)
 }
 
-func NewWallet(c *gin.Context) {
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	client, err := db.MongoClient(ctx)
-	utils.CheckErr(err)
+func NewWallet(client *mongo.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		repo := db.MongoDB{}
+		cntrl := NewWalletController{}
 
-	repo := db.MongoDB{}
-	cntrl := NewWalletController{}
-
-	cntrl.TryNewWallet(c, client, repo)
+		cntrl.TryNewWallet(c, client, repo)
+	}
 }

@@ -46,46 +46,61 @@ function nvidia() {
     }')")
 }
 
-echo =============================================================
-printf "NVIDIA: %s\tAMD: %s\n" "$NVIDIA_DRIVER_VERSION" "$AMD_DRIVER_VERSION"
+if [ -z "$1" ]; then
+	echo =============================================================
+	printf "NVIDIA: %s\tAMD: %s\n\n" "$NVIDIA_DRIVER_VERSION" "$AMD_DRIVER_VERSION"
+fi
 
 for ((i=0; i < ${#lshwData[@]}; i++)) do
     VENDOR=$(echo ${lshwData[$i]} | jq '.vendor' | awk '{
-        if ($0 == "\"NVIDIA\"") {
-            print "nvidia"
-        }
-        else if ($0 == "\"NVIDIA Corporation\"") {
-            print "nvidia"
-        }
-        else if ($0 == "\"Advanced Micro Devices, Inc. [AMD/ATI]\"") {
-            print "amd"
-        }
+	if ($0 == "\"NVIDIA\"") {
+	    print "nvidia"
+	}
+	else if ($0 == "\"NVIDIA Corporation\"") {
+	    print "nvidia"
+	}
+	else if ($0 == "\"Advanced Micro Devices, Inc. [AMD/ATI]\"") {
+	    print "amd"
+	}
     }')
 
     case $VENDOR in
-        amd)
-            AMD_INDEX=$((AMD_INDEX + 1))
-            amd $AMD_INDEX
-            printf "GPU Vendor:\t%s\nGPU Name:\t%s\nMemory Size:\t%s\n\n" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}"
-            ;;
-        nvidia)
-            NVIDIA_INDEX=$((NVIDIA_INDEX + 1))
-            nvidia $NVIDIA_INDEX
-            printf "GPU Vendor:\t%s\nGPU Name:\t%s\nMemory Size:\t%s\n\n" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}"
-            ;;
+	amd)
+	    AMD_INDEX=$((AMD_INDEX + 1))
+	    amd $AMD_INDEX
+	    if [ -z "$1" ]; then
+		printf "GPU Vendor:\t%s\nGPU Name:\t%s\nMemory Size:\t%s\n\n" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}"
+	    fi
+	    ;;
+	nvidia)
+	    NVIDIA_INDEX=$((NVIDIA_INDEX + 1))
+	    nvidia $NVIDIA_INDEX
+	    if [ -z "$1" ]; then
+		printf "GPU Vendor:\t%s\nGPU Name:\t%s\nMemory Size:\t%s\n\n" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}"
+	    fi
+	    ;;
     esac
 done
 
-echo =============================================================
+if [ -z "$1" ]; then
+	echo =============================================================
+fi
 
-echo "[" > /mineralos/srv/gpus/gpus.json
-for ((i=0; i < ${#GPUS_VENDOR[@]}; i++)) {
-    printf "\t{\n\t\t\"gpu_vendor\":\"%s\",\n\t\t\"gpu_name\":\"%s\",\n\t\t\"memory_size\":\"%s\"\n\t}" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}" >> /mineralos/srv/gpus/gpus.json
+key="$1"
+case $key in
+	-j|--json)
+		echo "[" 
+		for ((i=0; i < ${#GPUS_VENDOR[@]}; i++)) {
+		    printf "\t{\n\t\t\"gpu_vendor\":\"%s\",\n\t\t\"gpu_name\":\"%s\",\n\t\t\"memory_size\":\"%s\"\n\t}" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}" 
 
-    if (($i != (${#GPUS_VENDOR[@]} - 1))); then
-        echo "," >> /mineralos/srv/gpus/gpus.json
-    else
-        echo >> /mineralos/srv/gpus/gpus.json
-    fi
-}
-echo "]" >> /mineralos/srv/gpus/gpus.json
+		    if (($i != (${#GPUS_VENDOR[@]} - 1))); then
+			echo "," 
+		    else
+			echo 
+		    fi
+		}
+		printf "]"
+	;;
+esac
+
+

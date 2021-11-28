@@ -11,7 +11,6 @@ import (
 	"strings"
 	"syscall"
 
-	"github.com/laxamore/mineralos/grpc/grpc_type"
 	"github.com/laxamore/mineralos/grpc/handler/client"
 	pb "github.com/laxamore/mineralos/grpc/mineralos_proto"
 	"github.com/laxamore/mineralos/utils/Linux"
@@ -135,10 +134,11 @@ func grpc_client() {
 		Log.Print(err)
 	}
 
-	// gpus, err := utils.GetGPU()
-	// if err != nil {
-	// 	Log.Print(err)
-	// }
+	gpus, err := Linux.GetGPU()
+	if err != nil {
+		Log.Print(err)
+	}
+	pbGpus := Linux.ArrGPUSToPBGPUS(gpus)
 
 	RIG_CONF := readConf()
 
@@ -157,15 +157,16 @@ func grpc_client() {
 
 LOOP:
 	for {
-		clientPayload := grpc_type.ClientPayload{
-			Drivers: Linux.GPUDriverVersion{
-				AMD:    drivers.AMD,
-				NVIDIA: drivers.NVIDIA,
+		cntrl.TryClient(c, ctx, &pb.Payload{
+			RigId: RIG_CONF.RIG_ID,
+			Status: &pb.Status{
+				Drivers: &pb.Drivers{
+					AMD:    drivers.AMD,
+					NVIDIA: drivers.NVIDIA,
+				},
+				Gpus: pbGpus,
 			},
-			RigID: RIG_CONF.RIG_ID,
-		}
-
-		cntrl.TryClient(c, ctx, clientPayload)
+		})
 		time.Sleep(time.Millisecond * 100)
 
 		select {

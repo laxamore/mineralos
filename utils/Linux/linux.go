@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"os/exec"
 	"strings"
+
+	pb "github.com/laxamore/mineralos/grpc/mineralos_proto"
 )
 
 type GPUDriverVersion struct {
@@ -12,9 +14,9 @@ type GPUDriverVersion struct {
 }
 
 type GPU struct {
-	GPU_Vendor  string `json:"gpu_vendor"`
-	GPU_Name    string `json:"gpu_name"`
-	Memory_Size string `json:"memory_size"`
+	GpuVendor  string `json:"gpu_vendor"`
+	GpuName    string `json:"gpu_name"`
+	MemorySize string `json:"memory_size"`
 }
 
 func GetGPUDriverVersion() (drivers GPUDriverVersion, err error) {
@@ -48,5 +50,17 @@ func GetGPU() (gpus []GPU, err error) {
 	}
 
 	json.Unmarshal(gpusCommandOutput, &gpus)
+	return
+}
+
+func ArrGPUSToPBGPUS(gpus []GPU) (pbGPUS []*pb.GPUS) {
+	for i := 0; i < len(gpus); i++ {
+		pbGPUS = append(pbGPUS, &pb.GPUS{
+			GpuVendor:  gpus[i].GpuVendor,
+			GpuName:    gpus[i].GpuName,
+			MemorySize: gpus[i].MemorySize,
+		})
+	}
+
 	return
 }

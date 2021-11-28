@@ -12,8 +12,23 @@ service Mineralos {
 // The request message containing the user's name.
 message Payload {
   string rig_id = 1;
-  string amd_driver = 2;
-  string nvidia_driver = 3;
+  Status status = 2;
+}
+
+message Status {
+  Drivers drivers = 1;
+  repeated GPUS gpus = 2;
+}
+
+message Drivers {
+  string AMD = 1;
+  string NVIDIA = 2;
+}
+
+message GPUS {
+  string gpu_vendor = 1;
+  string gpu_name = 2;
+  string memory_size = 3;
 }
 
 // The response message containing the greetings

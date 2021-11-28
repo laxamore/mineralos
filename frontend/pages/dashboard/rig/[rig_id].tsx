@@ -20,7 +20,7 @@ const Rigs: NextPage<Params> = ({ data }) => {
     const [showKey, setShowKey] = useState(false)
 
     useEffect(() => {
-        if (data.status === 404) {
+        if (data.responseStatus === 404) {
             Router.push('/404.html')
         }
 
@@ -62,6 +62,16 @@ const Rigs: NextPage<Params> = ({ data }) => {
                                             showKey ? <EyeOffIcon /> : <EyeIcon />
                                         }
                                     </div>
+                                    <div className="flex flex-grow flex-row-reverse">
+                                        <div className="flex flex-row px-4">
+                                            <p className="pr-2">AMD Drivers:</p>
+                                            <p>{data.status ? data.status.drivers.amd : ''}</p>
+                                        </div>
+                                        <div className="flex flex-row px-4">
+                                            <p className="pr-2">NVIDIA Drivers:</p>
+                                            <p>{data.status ? data.status.drivers.nvidia : ''}</p>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </Content>
@@ -91,7 +101,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
                     const responseJSON = await response.json()
                     resolve({
                         ...responseJSON,
-                        status: response.status
+                        responseStatus: response.status
                     })
                 }
                 else {

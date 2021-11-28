@@ -5,10 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/laxamore/mineralos/grpc/grpc_type"
 	pb "github.com/laxamore/mineralos/grpc/mineralos_proto"
 	"github.com/laxamore/mineralos/utils"
-	"github.com/laxamore/mineralos/utils/Linux"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -26,23 +24,15 @@ type ServerController struct {
 }
 
 func (s *ServerController) ReportStatus(ctx context.Context, in *pb.Payload) (*pb.ServerReply, error) {
-	clientPayload := grpc_type.ClientPayload{
-		RigID: in.GetRigId(),
-		Drivers: Linux.GPUDriverVersion{
-			AMD:    in.GetAmdDriver(),
-			NVIDIA: in.GetNvidiaDriver(),
-		},
-	}
-
-	replyMsg, err := handlePayload(clientPayload, s.Client, s.RepositoryInterface)
+	replyMsg, err := handlePayload(in, s.Client, s.RepositoryInterface)
 	utils.CheckErr(err)
-	return &pb.ServerReply{Message: replyMsg.Message}, nil
+	return replyMsg, nil
 }
 
-func handlePayload(clientPayload grpc_type.ClientPayload, mongoClient *mongo.Client, repositoryInterface ServerRepositoryInterface) (replyMsg grpc_type.Reply, err error) {
+func handlePayload(clientPayload *pb.Payload, mongoClient *mongo.Client, repositoryInterface ServerRepositoryInterface) (replyMsg *pb.ServerReply, err error) {
 	res := repositoryInterface.FindOne(mongoClient, "mineralos", "rigs", bson.D{
 		{
-			Key: "rig_id", Value: clientPayload.RigID,
+			Key: "rig_id", Value: clientPayload.GetRigId(),
 		},
 	})
 
@@ -54,16 +44,15 @@ func handlePayload(clientPayload grpc_type.ClientPayload, mongoClient *mongo.Cli
 				Key: "$set", Value: bson.M{"lastActivity": time.Now().UTC()},
 			},
 			{
-				Key: "$set", Value: bson.M{"status": map[string]interface{}{
-					"Drivers": clientPayload.Drivers,
-				},
+				Key: "$set", Value: bson.M{
+					"status": clientPayload.GetStatus(),
 				},
 			},
 		}
 
 		_, err = repositoryInterface.UpdateOne(mongoClient, "mineralos", "rigs", bson.D{
 			{
-				Key: "rig_id", Value: clientPayload.RigID,
+				Key: "rig_id", Value: clientPayload.GetRigId(),
 			},
 		}, update)
 
@@ -71,7 +60,7 @@ func handlePayload(clientPayload grpc_type.ClientPayload, mongoClient *mongo.Cli
 			Log.Printf("error %v", err)
 		}
 
-		replyMsg.Message = "ok"
+		replyMsg = &pb.ServerReply{Message: "ok"}
 		return
 	}
 

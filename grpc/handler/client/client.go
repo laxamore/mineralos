@@ -12,7 +12,7 @@ type ClientController struct{}
 func (a ClientController) TryClient(c pb.MineralosClient, ctx context.Context, payload *pb.Payload) {
 	r, err := c.ReportStatus(ctx, payload)
 	if err != nil {
-		Log.Print("could not report status: cannot connect to server")
+		Log.Printf("could not report status: cannot connect to server %v", err)
 	}
 	Log.Printf("Response: %s", r.GetMessage())
 }

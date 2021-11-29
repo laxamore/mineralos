@@ -6,7 +6,6 @@ import (
 	"time"
 
 	pb "github.com/laxamore/mineralos/grpc/mineralos_proto"
-	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -25,7 +24,9 @@ type ServerController struct {
 
 func (s *ServerController) ReportStatus(ctx context.Context, in *pb.Payload) (*pb.ServerReply, error) {
 	replyMsg, err := handlePayload(in, s.Client, s.RepositoryInterface)
-	utils.CheckErr(err)
+	if err != nil {
+		Log.Printf("error: %v", err)
+	}
 	return replyMsg, nil
 }
 

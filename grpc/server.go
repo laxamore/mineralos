@@ -8,6 +8,7 @@ import (
 
 	"github.com/joho/godotenv"
 	"github.com/laxamore/mineralos/db"
+	"github.com/laxamore/mineralos/embeding"
 	"github.com/laxamore/mineralos/grpc/handler/server"
 	pb "github.com/laxamore/mineralos/grpc/mineralos_proto"
 	"github.com/laxamore/mineralos/utils"
@@ -34,7 +35,9 @@ func main() {
 	}
 
 	repo := db.MongoDB{}
-	s := grpc.NewServer()
+
+	creds, _ := embeding.LoadServerTLSCert()
+	s := grpc.NewServer(grpc.Creds(creds))
 	pb.RegisterMineralosServer(s, &server.ServerController{
 		Client:              client,
 		RepositoryInterface: repo,

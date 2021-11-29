@@ -11,8 +11,10 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/laxamore/mineralos/embeding"
 	"github.com/laxamore/mineralos/grpc/handler/client"
 	pb "github.com/laxamore/mineralos/grpc/mineralos_proto"
+	"github.com/laxamore/mineralos/utils"
 	"github.com/laxamore/mineralos/utils/Linux"
 	"github.com/laxamore/mineralos/utils/Log"
 	"github.com/sevlyar/go-daemon"
@@ -24,11 +26,8 @@ import (
 const logFileName = "/mineralos/var/log/mineralos.log"
 
 type rigConfig struct {
-	SERVER_IP         string
-	SERVER_PUBLIC_KEY string
-	RIG_ID            string
-	RIG_KEY           string
-	RIG_PUBLIC_KEY    string
+	SERVER_IP string
+	RIG_ID    string
 }
 
 func readConf() rigConfig {
@@ -46,24 +45,12 @@ func readConf() rigConfig {
 	SERVER_IP := strings.Split(rigConfString, "SERVER_IP=")[1]
 	SERVER_IP = strings.Split(SERVER_IP, "\n")[0]
 
-	SERVER_PUBLIC_KEY := strings.Split(rigConfString, "SERVER_PUBLIC_KEY=")[1]
-	SERVER_PUBLIC_KEY = strings.Split(SERVER_PUBLIC_KEY, "\n")[0]
-
 	RIG_ID := strings.Split(rigConfString, "RIG_ID=")[1]
 	RIG_ID = strings.Split(RIG_ID, "\n")[0]
 
-	RIG_KEY := strings.Split(rigConfString, "RIG_KEY=")[1]
-	RIG_KEY = strings.Split(RIG_KEY, "\n")[0]
-
-	RIG_PUBLIC_KEY := strings.Split(rigConfString, "RIG_PUBLIC_KEY=")[1]
-	RIG_PUBLIC_KEY = strings.Split(RIG_PUBLIC_KEY, "\n")[0]
-
 	return rigConfig{
-		SERVER_IP:         SERVER_IP,
-		SERVER_PUBLIC_KEY: SERVER_PUBLIC_KEY,
-		RIG_ID:            RIG_ID,
-		RIG_KEY:           RIG_KEY,
-		RIG_PUBLIC_KEY:    RIG_PUBLIC_KEY,
+		SERVER_IP: SERVER_IP,
+		RIG_ID:    RIG_ID,
 	}
 }
 
@@ -141,9 +128,11 @@ func grpc_client() {
 	pbGpus := Linux.ArrGPUSToPBGPUS(gpus)
 
 	RIG_CONF := readConf()
+	creds, err := embeding.LoadClientTLSCert(false, "/mineralos/etc/ssl/certs/grpc-public-cert.pem")
+	utils.CheckErr(err)
 
 	// Set up a connection to the server.
-	conn, err := grpc.Dial(fmt.Sprintf("%s:9000", RIG_CONF.SERVER_IP), grpc.WithInsecure(), grpc.WithBlock())
+	conn, err := grpc.Dial(fmt.Sprintf("%s:9000", RIG_CONF.SERVER_IP), grpc.WithTransportCredentials(creds))
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}

@@ -1,7 +1,5 @@
 #!/bin/sh
 
-clear
-
 AMD_DRIVER_VERSION=$(pacman -Qi opencl-amd | grep Version | cut -d':' -f 2 | awk '{ sub(/^[ \t]+/, ""); print }')
 NVIDIA_DRIVER_VERSION=$(pacman -Qi nvidia | grep Version | cut -d':' -f 2 | awk '{ sub(/^[ \t]+/, ""); print }')
 

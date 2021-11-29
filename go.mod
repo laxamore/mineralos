@@ -4,10 +4,8 @@ go 1.17
 
 require (
 	github.com/gin-gonic/gin v1.7.4
-	github.com/go-playground/assert/v2 v2.0.1
 	github.com/google/uuid v1.3.0
 	github.com/joho/godotenv v1.4.0
-	github.com/pebbe/zmq4 v1.2.7
 	github.com/sevlyar/go-daemon v0.1.5
 	go.mongodb.org/mongo-driver v1.7.3
 	google.golang.org/grpc v1.42.0
@@ -16,7 +14,6 @@ require (
 
 require (
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
-	github.com/mitchellh/go-homedir v1.0.0 // indirect
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
 )

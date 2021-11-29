@@ -6,10 +6,6 @@ ENV DOCKER true
 RUN mkdir -p /go/src/github.com/laxamore/mineralos
 WORKDIR /go/src/github.com/laxamore/mineralos
 
-# Installing zmq
-# RUN apk add gcc libc-dev zeromq-dev libzmq
-RUN apk add musl-dev gcc g++ libsodium-static zeromq-dev libzmq-static libc-dev
-
 # Installing dependencies
 COPY . /go/src/github.com/laxamore/mineralos
 RUN go get -d -v ./...

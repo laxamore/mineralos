@@ -30,29 +30,6 @@ services:
     networks:
       - mineralos-network
   
-  zmq_router:
-    ports:
-      - 9000:9000
-      - 9001:9001
-    build:
-      context: ./
-      dockerfile: Dockerfile      
-    volumes:
-      - ./:/go/src/github.com/laxamore/mineralos
-    command: "sh docker_startup.sh zmq_router ${ENV}"
-    networks:
-      - mineralos-network
-  
-  zmq_worker:
-    build:
-      context: ./
-      dockerfile: Dockerfile      
-    volumes:
-      - ./:/go/src/github.com/laxamore/mineralos
-    command: "sh docker_startup.sh zmq_worker ${ENV}"
-    networks:
-      - mineralos-network
-  
   mongodb:
     ports:
       - 27017:27017
@@ -65,15 +42,6 @@ services:
     restart: unless-stopped
     networks:
       - mineralos-network
-
-  # For Static Compile ZMQ App
-  compile:
-    build:
-      context: ./
-      dockerfile: Dockerfile
-    volumes:
-      - ./:/go/src/github.com/laxamore/mineralos
-    command: "sh build.sh"
 
 networks:
   mineralos-network:

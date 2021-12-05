@@ -13,9 +13,17 @@ require (
 )
 
 require (
+	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
+	github.com/ghodss/yaml v1.0.0 // indirect
+	github.com/go-gl/gldebug v0.0.0-20121021133040-30e6a6e03c6c // indirect
+	github.com/go-ole/go-ole v1.2.4 // indirect
+	github.com/jaypipes/ghw v0.8.0 // indirect
+	github.com/jaypipes/pcidb v0.6.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
+	github.com/mitchellh/go-homedir v1.0.0 // indirect
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	google.golang.org/genproto v0.0.0-20200526211855-cb27e3aa2013 // indirect
+	howett.net/plist v0.0.0-20181124034731-591f970eefbb // indirect
 )
 
 require (

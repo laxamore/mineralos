@@ -42,7 +42,7 @@ func GetGPUDriverVersion() (drivers GPUDriverVersion, err error) {
 }
 
 func GetGPU() (gpus []GPU, err error) {
-	gpusCommand := exec.Command("bash", "-c", "gpus-info --json")
+	gpusCommand := exec.Command("/mineralos/bin/gpus-info", "--json")
 
 	gpusCommandOutput, err := gpusCommand.Output()
 	if err != nil {

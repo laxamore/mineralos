@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 AMD_DRIVER_VERSION=$(pacman -Qi opencl-amd | grep Version | cut -d':' -f 2 | awk '{ sub(/^[ \t]+/, ""); print }')
 NVIDIA_DRIVER_VERSION=$(pacman -Qi nvidia | grep Version | cut -d':' -f 2 | awk '{ sub(/^[ \t]+/, ""); print }')
@@ -7,75 +7,47 @@ GPUS_VENDOR=()
 GPUS_NAME=()
 GPUS_MEMORYS=()
 GPUS_PCIE_ID=()
+GPUS_BUS=()
 
-readarray -t lshwData < <(lshw -quiet -C display -json | jq -c '.[]')
-clinfoData=$(clinfo)
-nvidiaSMINameData=$(nvidia-smi --query-gpu=name --format=csv)
-nvidiaSMIMemoryData=$(nvidia-smi --query-gpu=memory.total --format=csv)
-
-AMD_INDEX=0
-NVIDIA_INDEX=0
-
-function amd() {
-    GPUS_VENDOR+=("AMD")
-    GPUS_NAME+=("$(printf "$clinfoData" | grep "Board Name (AMD)" | tr -s ' ' | awk -v idx=$1 '{
-        if (idx == NR) {
-            print substr($0, index($0, $5))
-        }
-    }')")
-    GPUS_MEMORYS+=("$(dmesg | grep VRAM | grep used | cut -d'(' -f 2 | cut -d' ' -f 1 | awk -v idx=$1 '{
-        if (idx == NR) {
-            print
-        }
-    }')")
-}
-
-function nvidia() {
-    GPUS_VENDOR+=("NVIDIA")
-    GPUS_NAME+=("$(printf "$nvidiaSMINameData" | awk -v idx=$1 '{
-        if (NR==(idx+1)) {
-            print
-        }
-    }')")
-    GPUS_MEMORYS+=("$(printf "$nvidiaSMIMemoryData" | awk -v idx=$1 '{
-        if (NR==(idx+1)) {
-            print
-        }
-    }')")
-}
+gpuraw=$(gpuraw)
+nvidiaSMIData=$(nvidia-smi --query-gpu=gpu_bus_id,memory.total --format=csv | awk -F, 'NR>1{print}')
 
 if [ -z "$1" ]; then
 	echo =============================================================
 	printf "NVIDIA: %s\tAMD: %s\n\n" "$NVIDIA_DRIVER_VERSION" "$AMD_DRIVER_VERSION"
 fi
 
-for ((i=0; i < ${#lshwData[@]}; i++)) do
-    VENDOR=$(echo ${lshwData[$i]} | jq '.vendor' | awk '{
-	if ($0 == "\"NVIDIA\"") {
-	    print "nvidia"
-	}
-	else if ($0 == "\"NVIDIA Corporation\"") {
-	    print "nvidia"
-	}
-	else if ($0 == "\"Advanced Micro Devices, Inc. [AMD/ATI]\"") {
-	    print "amd"
-	}
-    }')
+for row in $(echo "${gpuraw}" | jq -r '.[] | @base64'); do
+	_jq() {
+		echo ${row} | base64 --decode | jq -r ${1}
+    }
+	
+	VENDOR=$(_jq '.pci.vendor.name')
 
     case $VENDOR in
-	amd)
-	    AMD_INDEX=$((AMD_INDEX + 1))
-	    amd $AMD_INDEX
+	AMD)
+		BUS_ADDRESS=$(_jq '.address')
+    	GPU_NAME=$(_jq '.pci.product.name')
+		GPU_MEMORY=$(dmesg | grep "amdgpu $BUS_ADDRESS: amdgpu: VRAM:" | cut -d'(' -f2 | grep -o '[0-9]\+')
 	    if [ -z "$1" ]; then
-		printf "GPU Vendor:\t%s\nGPU Name:\t%s\nMemory Size:\t%s\n\n" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}"
+		printf "BUS Address:\t%s\nGPU Vendor:\t%s\nGPU Name:\t%s\nMemory Size:\t%s\n\n" "${BUS_ADDRESS}" "${VENDOR}" "${GPU_NAME}" "${GPU_MEMORY} MB"
 	    fi
+		GPUS_BUS+=("$BUS_ADDRESS")
+		GPUS_VENDOR+=("$VENDOR")
+		GPUS_NAME+=("$GPU_NAME")
+		GPUS_MEMORYS+=("$GPU_MEMORY")
 	    ;;
-	nvidia)
-	    NVIDIA_INDEX=$((NVIDIA_INDEX + 1))
-	    nvidia $NVIDIA_INDEX
+	NVIDIA)
+		BUS_ADDRESS=$(_jq '.address')
+    	GPU_NAME=$(_jq '.pci.product.name')
+		GPU_MEMORY=$(printf "$nvidiaSMIData" | grep ${BUS_ADDRESS^^} | cut -d' ' -f2)
 	    if [ -z "$1" ]; then
-		printf "GPU Vendor:\t%s\nGPU Name:\t%s\nMemory Size:\t%s\n\n" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}"
+		printf "BUS Address:\t%s\nGPU Vendor:\t%s\nGPU Name:\t%s\nMemory Size:\t%s\n\n" "${BUS_ADDRESS}" "${VENDOR}" "${GPU_NAME}" "${GPU_MEMORY} MB"
 	    fi
+		GPUS_BUS+=("$BUS_ADDRESS")
+		GPUS_VENDOR+=("$VENDOR")
+		GPUS_NAME+=("$GPU_NAME")
+		GPUS_MEMORYS+=("$GPU_MEMORY")
 	    ;;
     esac
 done
@@ -89,8 +61,21 @@ case $key in
 	-j|--json)
 		echo "[" 
 		for ((i=0; i < ${#GPUS_VENDOR[@]}; i++)) {
-		    printf "\t{\n\t\t\"gpu_vendor\":\"%s\",\n\t\t\"gpu_name\":\"%s\",\n\t\t\"memory_size\":\"%s\"\n\t}" "${GPUS_VENDOR[$i]}" "${GPUS_NAME[$i]}" "${GPUS_MEMORYS[$i]}" 
+		    printf "\t{\n" 
 
+			printf "\t\t\"gpu_bus\":\"%s\"" "${GPUS_BUS[$i]}" 
+			printf ",\n"
+
+			printf "\t\t\"gpu_vendor\":\"%s\"" "${GPUS_VENDOR[$i]}" 
+			printf ",\n"
+			
+			printf "\t\t\"gpu_name\":\"%s\"" "${GPUS_NAME[$i]}" 
+			printf ",\n"
+			
+			printf "\t\t\"memory_size\":\"%s\"" "${GPUS_MEMORYS[$i]} MB" 
+
+		    printf "\t}\n" 
+			
 		    if (($i != (${#GPUS_VENDOR[@]} - 1))); then
 			echo "," 
 		    else

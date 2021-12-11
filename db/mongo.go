@@ -21,7 +21,7 @@ type MongoDBInterface interface {
 	IndexesDropOne(*mongo.Client, string, string, string) (bson.Raw, error)
 	IndexesReplaceOne(*mongo.Client, string, string, mongo.IndexModel) (string, error)
 	IndexesReplaceMany(*mongo.Client, string, string, []mongo.IndexModel) (string, error)
-	UpdateOne(*mongo.Client, string, string, interface{}, interface{}) (*mongo.UpdateResult, error)
+	UpdateOne(*mongo.Client, string, string, interface{}, interface{}, ...*options.UpdateOptions) (*mongo.UpdateResult, error)
 }
 
 type MongoDB struct{}
@@ -220,7 +220,7 @@ func (a MongoDB) IndexesReplaceMany(client *mongo.Client, db_name string, collec
 	return res, err
 }
 
-func (a MongoDB) UpdateOne(client *mongo.Client, db_name string, collection_name string, filter interface{}, update interface{}) (*mongo.UpdateResult, error) {
+func (a MongoDB) UpdateOne(client *mongo.Client, db_name string, collection_name string, filter interface{}, update interface{}, opts ...*options.UpdateOptions) (*mongo.UpdateResult, error) {
 	// ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	// defer cancel()
 	// client, err := MongoClient(ctx)

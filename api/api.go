@@ -40,6 +40,8 @@ func main() {
 	router.DELETE("/api/v1/deleteWallet", Middleware.CheckAuth, ApiRigs.DeleteWallet(client))
 	router.GET("/api/v1/getWallets", Middleware.CheckAuth, ApiRigs.GetWallets(client))
 
+	router.PUT("/api/v1/updateOC", Middleware.CheckAuth, ApiRigs.UpdateOC(client))
+
 	router.POST("/api/v1/register", Middleware.BeforeRegister, ApiUsers.Register(client))
 	router.POST("/api/v1/registerToken", Middleware.VerifyAdmin, ApiUsers.RegisterToken(client))
 	router.POST("/api/v1/login", ApiUsers.Login(client))

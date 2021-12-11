@@ -64,7 +64,7 @@ const Dashboard: NextPage<Props> = ({ data }) => {
         }
 
         return () => { clearRefreshTimer() };
-    }, [data.rigs])
+    }, [])
 
     const tableInstance = useTable({ columns: columns, data: rigsData })
     const {
@@ -175,7 +175,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx: any) => {
                     resolve(await response.json())
                 }
                 else {
-                    resolve({ status: response.status })
+                    resolve({ responseStatus: response.status })
                 }
             }, isServer(), rtoken)
         })

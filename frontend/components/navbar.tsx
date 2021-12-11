@@ -31,11 +31,11 @@ const Navbar: FC = () => {
                     <a>Rigs</a>
                 </Link>
             </li>
-            <li>
+            {/* <li>
                 <Link href="/dashboard/overclocking">
                     <a>Overclokcing</a>
                 </Link>
-            </li>
+            </li> */}
             <li>
                 <Link href="/dashboard/wallets">
                     <a>Wallets</a>

@@ -9,11 +9,12 @@ import (
 	"github.com/laxamore/mineralos/utils/Log"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/mongo"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type ServerRepositoryInterface interface {
 	FindOne(*mongo.Client, string, string, interface{}) map[string]interface{}
-	UpdateOne(*mongo.Client, string, string, interface{}, interface{}) (*mongo.UpdateResult, error)
+	UpdateOne(*mongo.Client, string, string, interface{}, interface{}, ...*options.UpdateOptions) (*mongo.UpdateResult, error)
 }
 
 type ServerController struct {

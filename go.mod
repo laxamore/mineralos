@@ -5,6 +5,7 @@ go 1.17
 require (
 	github.com/gin-gonic/gin v1.7.4
 	github.com/google/uuid v1.3.0
+	github.com/jaypipes/ghw v0.8.0
 	github.com/joho/godotenv v1.4.0
 	github.com/sevlyar/go-daemon v0.1.5
 	go.mongodb.org/mongo-driver v1.7.3
@@ -17,7 +18,6 @@ require (
 	github.com/ghodss/yaml v1.0.0 // indirect
 	github.com/go-gl/gldebug v0.0.0-20121021133040-30e6a6e03c6c // indirect
 	github.com/go-ole/go-ole v1.2.4 // indirect
-	github.com/jaypipes/ghw v0.8.0 // indirect
 	github.com/jaypipes/pcidb v0.6.0 // indirect
 	github.com/kardianos/osext v0.0.0-20190222173326-2bc1f35cddc0 // indirect
 	github.com/mitchellh/go-homedir v1.0.0 // indirect

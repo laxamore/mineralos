@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/google/uuid"
 	"github.com/laxamore/mineralos/api/api"
@@ -51,7 +50,7 @@ func (a *NewRigController) TryNewRig(c *gin.Context, client *mongo.Client, repos
 
 				newUUID := uuid.New()
 
-				insertResultID, err := repositoryInterface.InsertOne(client, os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+				insertResultID, err := repositoryInterface.InsertOne(client, "mineralos", "rigs", bson.D{
 					{
 						Key: "rig_id", Value: newUUID.String(),
 					},

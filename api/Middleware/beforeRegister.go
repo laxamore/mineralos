@@ -3,7 +3,6 @@ package Middleware
 import (
 	"context"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,7 +24,7 @@ func (a BeforeRegisterController) TryBeforeRegister(c *gin.Context, client *mong
 	c.Set("token", nil)
 	regToken := c.GetHeader("regToken")
 
-	results, err := repositoryInterface.Find(client, os.Getenv("PROJECT_NAME"), "users", bson.D{{}})
+	results, err := repositoryInterface.Find(client, "mineralos", "users", bson.D{{}})
 	// Log.Printf("%v", len(results))
 
 	if err != nil {
@@ -33,7 +32,7 @@ func (a BeforeRegisterController) TryBeforeRegister(c *gin.Context, client *mong
 	}
 
 	if len(results) > 0 {
-		result := repositoryInterface.FindOne(client, os.Getenv("PROJECT_NAME"), "registerToken", bson.D{{Key: "token", Value: regToken}})
+		result := repositoryInterface.FindOne(client, "mineralos", "registerToken", bson.D{{Key: "token", Value: regToken}})
 		// Log.Printf("%v", result)
 
 		if len(result) > 0 {

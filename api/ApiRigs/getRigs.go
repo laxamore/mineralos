@@ -2,7 +2,6 @@ package ApiRigs
 
 import (
 	"net/http"
-	"os"
 
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/api/api"
@@ -24,7 +23,7 @@ func (a GetRigsController) TryGetRigs(c *gin.Context, client *mongo.Client, repo
 		Response: "forbidden",
 	}
 
-	rigsList, err := repositoryInterface.Find(client, os.Getenv("PROJECT_NAME"), "rigs", bson.D{{}})
+	rigsList, err := repositoryInterface.Find(client, "mineralos", "rigs", bson.D{{}})
 
 	if err != nil {
 		Log.Printf("error find rigs %v", err)

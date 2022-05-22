@@ -43,7 +43,7 @@ func (a RefreshTokenController) TryRefreshToken(c *gin.Context, client *mongo.Cl
 				Log.Print("Invalid id")
 			}
 
-			result := repositoryInterface.FindOne(client, os.Getenv("PROJECT_NAME"), "users", bson.D{
+			result := repositoryInterface.FindOne(client, "mineralos", "users", bson.D{
 				{
 					Key: "_id", Value: objectID,
 				},

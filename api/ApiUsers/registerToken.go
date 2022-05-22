@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -53,7 +52,7 @@ func (a RegisterTokenController) TryRegisterToken(c *gin.Context, client *mongo.
 			response.Response = "Bad Request"
 		} else {
 			var expireAfterSeconds int32 = 43200
-			createIndexRes, err := repositoryInterface.IndexesReplaceOne(client, os.Getenv("PROJECT_NAME"), "registerToken", mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
+			createIndexRes, err := repositoryInterface.IndexesReplaceOne(client, "mineralos", "registerToken", mongo.IndexModel{Keys: bson.D{{Key: "createdAt", Value: 1}}, Options: &options.IndexOptions{ExpireAfterSeconds: &expireAfterSeconds}})
 			if err != nil {
 				response.Code = http.StatusInternalServerError
 				response.Response = "Internal Server Error"
@@ -67,7 +66,7 @@ func (a RegisterTokenController) TryRegisterToken(c *gin.Context, client *mongo.
 					return fmt.Sprintf("%x", b)
 				}()
 
-				res, err := repositoryInterface.InsertOne(client, os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
+				res, err := repositoryInterface.InsertOne(client, "mineralos", "registerToken", bson.D{
 					{
 						Key: "createdAt", Value: time.Now(),
 					},

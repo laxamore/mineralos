@@ -135,10 +135,10 @@ const Rigs: NextPage<Params> = ({ data }) => {
                             <table {...getTableProps()} className="my-4">
                                 <thead>
                                     {headerGroups.map(headerGroup => (
-                                        <tr {...headerGroup.getHeaderGroupProps()}>
+                                        <tr key={headerGroup.getHeaderGroupProps().key}>
                                             {headerGroup.headers.map(column => (
-                                                <th
-                                                    {...column.getHeaderProps()}
+                                                <th 
+                                                    key={column.getHeaderProps().key}
                                                     className={
                                                         `p-3
                                                         ${column.id == "gpuname" ? 'text-left w-9/12' : 'text-center'}
@@ -167,7 +167,7 @@ const Rigs: NextPage<Params> = ({ data }) => {
 
                                         prepareRow(row)
                                         return (
-                                            <tr {...row.getRowProps()} className="border-2 border-gray-500 cursor-pointer"
+                                            <tr key={row.getRowProps().key} className="border-2 border-gray-500 cursor-pointer"
                                                 onClick={() => {
                                                     setShowOverclockModal(true)
                                                     setGpu({
@@ -182,7 +182,7 @@ const Rigs: NextPage<Params> = ({ data }) => {
                                                 {row.cells.map((cell: any) => {
                                                     return (
                                                         <td
-                                                            {...cell.getCellProps()}
+                                                            key={cell.getCellProps().key}
                                                             className={
                                                                 `p-3 
                                                                 ${cell.column.id == "gpuname" ? ` w-9/12 text-lg font-bold ${row.original.gpuvendor === "NVIDIA" ? 'text-green-400' : 'text-red-500'}` : 'text-base text-white text-center'}
@@ -255,35 +255,40 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
     const data: any = await getRigsData()
     let amdIdx = -1, nvidiaIdx = -1;
 
-    data.status.gpus.map((ele: any, idx: number) => {
-        let ocinfo = {
-            fs: 0,
-            cc: 0,
-            cv: 0,
-            mc: 0,
-            mv: 0,
-            pl: 0
-        }
+    console.log(data)
 
-        let ocID = 0;
-        if (ele.gpuvendor == "AMD") {
-            amdIdx++
-            ocID = amdIdx;
-        } else if (ele.gpuvendor == "NVIDIA") {
-            nvidiaIdx++
-            ocID = nvidiaIdx;
-        }
+    if (typeof data.status != 'undefined') {
+        data.status.gpus.map((ele: any, idx: number) => {
+            let ocinfo = {
+                fs: 0,
+                cc: 0,
+                cv: 0,
+                mc: 0,
+                mv: 0,
+                pl: 0
+            }
 
-        if (typeof data.oc != "undefined") {
-            if (typeof data.oc[ele.gpuvendor] !== "undefined") {
-                if (typeof data.oc[ele.gpuvendor][ocID] !== "undefined") {
-                    ocinfo = data.oc[ele.gpuvendor][ocID]
+            let ocID = 0;
+            if (ele.gpuvendor == "AMD") {
+                amdIdx++
+                ocID = amdIdx;
+            } else if (ele.gpuvendor == "NVIDIA") {
+                nvidiaIdx++
+                ocID = nvidiaIdx;
+            }
+
+            if (typeof data.oc != "undefined") {
+                if (typeof data.oc[ele.gpuvendor] !== "undefined") {
+                    if (typeof data.oc[ele.gpuvendor][ocID] !== "undefined") {
+                        ocinfo = data.oc[ele.gpuvendor][ocID]
+                    }
                 }
             }
-        }
 
-        data.status.gpus[idx] = { ...data.status.gpus[idx], ...ocinfo }
-    })
+            data.status.gpus[idx] = { ...data.status.gpus[idx], ...ocinfo }
+        })
+    }
+
     return {
         props: { data }
     }

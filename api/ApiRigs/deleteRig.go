@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"os"
 
 	"github.com/laxamore/mineralos/api/api"
 	"github.com/laxamore/mineralos/db"
@@ -44,7 +43,7 @@ func (a DeleteRigController) TryDeleteRig(c *gin.Context, client *mongo.Client, 
 			json.Unmarshal(tokenClaimsByte, &tokenClaims)
 
 			if tokenClaims["privilege"] == "admin" || tokenClaims["privilege"] == "readAndWrite" {
-				_, err = repositoryInterface.DeleteOne(client, os.Getenv("PROJECT_NAME"), "rigs", bson.D{
+				_, err = repositoryInterface.DeleteOne(client, "mineralos", "rigs", bson.D{
 					{
 						Key: "rig_id", Value: fmt.Sprintf("%s", bodyData["rig_id"]),
 					},

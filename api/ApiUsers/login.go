@@ -43,7 +43,7 @@ func (a LoginController) TryLogin(c *gin.Context, client *mongo.Client, reposito
 	hasher.Write([]byte(fmt.Sprintf("%s", bodyData["password"])))
 	sha256_hash := hex.EncodeToString(hasher.Sum(nil))
 
-	result := repositoryInterface.FindOne(client, os.Getenv("PROJECT_NAME"), "users", bson.D{
+	result := repositoryInterface.FindOne(client, "mineralos", "users", bson.D{
 		{
 			Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 		},

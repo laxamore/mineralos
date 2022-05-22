@@ -8,7 +8,6 @@ import (
 	"log"
 	"net/http"
 	"net/mail"
-	"os"
 	"regexp"
 
 	"github.com/gin-gonic/gin"
@@ -72,7 +71,7 @@ func (a RegisterController) TryRegister(c *gin.Context, client *mongo.Client, re
 
 			// Create/Replace MongoDB Indexes For Unique Username & Email
 			isUnique := true
-			createIndexRes, err := repositoryInterface.IndexesReplaceMany(client, os.Getenv("PROJECT_NAME"), "users", []mongo.IndexModel{
+			createIndexRes, err := repositoryInterface.IndexesReplaceMany(client, "mineralos", "users", []mongo.IndexModel{
 				{
 					Keys: bson.D{
 						{Key: "username", Value: 1},
@@ -108,7 +107,7 @@ func (a RegisterController) TryRegister(c *gin.Context, client *mongo.Client, re
 			}
 			for _, check := range checkIndex {
 				if len(result) == 0 {
-					result = repositoryInterface.FindOne(client, os.Getenv("PROJECT_NAME"), "users", bson.D{
+					result = repositoryInterface.FindOne(client, "mineralos", "users", bson.D{
 						{
 							Key: check, Value: fmt.Sprintf("%s", bodyData[check]),
 						},
@@ -122,7 +121,7 @@ func (a RegisterController) TryRegister(c *gin.Context, client *mongo.Client, re
 			if len(result) == 0 {
 				if tokenInfo != nil || registerAdmin {
 					// Delete Register Token
-					_, err := repositoryInterface.DeleteOne(client, os.Getenv("PROJECT_NAME"), "registerToken", bson.D{
+					_, err := repositoryInterface.DeleteOne(client, "mineralos", "registerToken", bson.D{
 						{
 							Key: "token", Value: fmt.Sprintf("%s", tokenInfo["token"]),
 						},
@@ -136,7 +135,7 @@ func (a RegisterController) TryRegister(c *gin.Context, client *mongo.Client, re
 						errMsg = fmt.Sprintf("Register DeleteOne Error:\n%v", err)
 					} else {
 						// Register New User
-						res, err := repositoryInterface.InsertOne(client, os.Getenv("PROJECT_NAME"), "users", bson.D{
+						res, err := repositoryInterface.InsertOne(client, "mineralos", "users", bson.D{
 							{
 								Key: "username", Value: fmt.Sprintf("%s", bodyData["username"]),
 							}, {

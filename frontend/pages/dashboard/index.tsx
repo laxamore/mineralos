@@ -159,7 +159,7 @@ const Dashboard: NextPage<Props> = ({ data }) => {
 
 
 export const getServerSideProps: GetServerSideProps = async (ctx: any) => {
-    const rtoken = ctx.req.cookies['rtoken']
+    const cookie = ctx.req.headers.cookie
     const getRigsData = () => {
         return new Promise(resolve => {
             withAuth(async (token: jwtObject) => {
@@ -177,7 +177,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx: any) => {
                 else {
                     resolve({ responseStatus: response.status })
                 }
-            }, isServer(), rtoken)
+            }, isServer(), cookie)
         })
     }
 

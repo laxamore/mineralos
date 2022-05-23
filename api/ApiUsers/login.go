@@ -95,7 +95,7 @@ func (a LoginController) TryLogin(c *gin.Context, client *mongo.Client, reposito
 			Value:    url.QueryEscape(rtoken),
 			MaxAge:   2592000,
 			Path:     "/",
-			Domain:   os.Getenv("domain"),
+			Domain:   os.Getenv("DOMAIN"),
 			SameSite: http.SameSiteStrictMode,
 			Secure:   true,
 			HttpOnly: true,

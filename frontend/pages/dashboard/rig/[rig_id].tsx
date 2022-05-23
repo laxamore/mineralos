@@ -225,7 +225,7 @@ const Rigs: NextPage<Params> = ({ data }) => {
 
 export const getServerSideProps: GetServerSideProps = async (ctx) => {
     const { rig_id } = ctx.query
-    const rtoken = ctx.req.cookies['rtoken']
+    const cookie = ctx.req.headers.cookie
 
     const getRigsData = () => {
         return new Promise(resolve => {
@@ -248,7 +248,7 @@ export const getServerSideProps: GetServerSideProps = async (ctx) => {
                 else {
                     resolve({ responseStatus: response.status })
                 }
-            }, isServer(), rtoken)
+            }, isServer(), cookie)
         })
     }
 

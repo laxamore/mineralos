@@ -20,7 +20,7 @@ func Logout(c *gin.Context) {
 		Value:    url.QueryEscape("rtoken"),
 		MaxAge:   -1,
 		Path:     "/",
-		Domain:   os.Getenv("domain"),
+		Domain:   os.Getenv("DOMAIN"),
 		SameSite: http.SameSiteStrictMode,
 		Secure:   true,
 		HttpOnly: true,

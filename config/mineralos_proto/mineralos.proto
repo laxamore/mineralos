@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+option go_package = "github.com/laxamore/mineralos/config/mineralos_proto";
+package mineralos_proto;
+
+// The greeting service definition.
+service Mineralos {
+  // Sends a greeting
+  rpc ReportStatus (Payload) returns (ServerReply) {}
+}
+
+// The request message containing the rig id.
+message Payload {
+  string rig_id = 1;
+  Status status = 2;
+}
+
+message Status {
+  Drivers drivers = 1;
+  repeated GPUS gpus = 2;
+}
+
+message Drivers {
+  string AMD = 1;
+  string NVIDIA = 2;
+}
+
+message GPUS {
+  string gpu_vendor = 1;
+  string gpu_name = 2;
+  string memory_size = 3;
+}
+
+// The response message containing the greetings
+message ServerReply {
+  string message = 1;
+}

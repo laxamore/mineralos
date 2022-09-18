@@ -6,13 +6,13 @@ services:
     ports:
       - 3000:3000
     build:
-      context: frontend/
+      context: website/
       dockerfile: Dockerfile
     volumes:
-      - ./frontend/:/usr/src/app
+      - ./website/:/usr/src/app
       - ./.env:/usr/src/.env
       - ./docker_startup.sh:/usr/src/docker_startup.sh
-    command: "bash ../docker_startup.sh frontend ${ENV}"
+    command: "bash ../docker_startup.sh website ${ENV}"
     restart: unless-stopped
     networks:
       - mineralos-network
@@ -30,15 +30,17 @@ services:
     networks:
       - mineralos-network
   
-  mongodb:
+  mariadb:
     ports:
-      - 27017:27017
-    image: mongo:5.0
+      - 3306:3306
+    image: mariadb
     environment:
-      - MONGO_INITDB_ROOT_USERNAME=root
-      - MONGO_INITDB_ROOT_PASSWORD=1234
+      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=yes
+      - MARIADB_USER=mineralos
+      - MARIADB_PASSWORD=mineralosadmin
+      - MARIADB_DATABASE=mineralos
     volumes:
-      - /home/laxa/mongodb/database:/data/db
+      - $HOME/docker/volumes/mineralos/mariadb:/var/lib/mysql
     restart: unless-stopped
     networks:
       - mineralos-network

@@ -6,5 +6,7 @@
 .vscode/
 *.pem
 *.srl
+./tmp
+.air.toml
 
-!linux/mineralos/bin
+!assets/linux/mineralos/bin

@@ -9,7 +9,7 @@ if [ "$ENV" == "dev" ]; then
         npm run dev
         ;;
         backend_api)
-        reflex -r '\.go$' -s -- sh -c 'go run api/api.go'
+        reflex -r '\.go$' -s -- sh -c 'go run restapi/restapi.go'
         ;;
     esac
 else  
@@ -19,7 +19,7 @@ else
         npm run start
         ;;
         backend_api)
-        go run api/api.go
+        go run restapi/restapi.go
         ;;
     esac
 fi

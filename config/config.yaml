@@ -1,0 +1,20 @@
+# GRPC Server
+"GRPC_PORT": 8545
+
+# Database Config
+"DB_HOST": "localhost"
+"DB_PORT": 3306
+"DB_USER": "mineralos"
+"DB_PASSWORD": "mineralosadmin"
+"DB_NAME": "mineralos"
+
+# Auth Config
+"ACCESS_TOKEN_EXPIRED": 3600
+"REFRESH_TOKEN_EXPIRED": 86400
+"JWT_SECRET": "mineralos"
+
+# REST API Config
+"REST_API_PORT": 8080
+"REST_API_HOST": "localhost"
+"CORS_ALLOW_ORIGIN":
+  - "*"

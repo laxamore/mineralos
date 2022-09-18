@@ -1,1 +1,0 @@
-### MineralOS Linux tmp

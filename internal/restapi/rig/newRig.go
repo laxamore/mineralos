@@ -1,4 +1,4 @@
-package rigs
+package rig
 
 import (
 	"encoding/json"
@@ -17,9 +17,14 @@ type NewRigRequest struct {
 	RigName string `json:"rig_name"`
 }
 
-type NewRigController struct{}
+func NewRig(c *gin.Context) {
+	ctrl := &RigController{
+		DB: databases.DB,
+	}
+	ctrl.NewRig(c)
+}
 
-func (a *NewRigController) TryNewRig(c *gin.Context, db databases.DBInterface) {
+func (ctrl RigController) NewRig(c *gin.Context) {
 	response := restapi.Result{
 		Code: http.StatusForbidden,
 		Response: map[string]interface{}{
@@ -58,7 +63,7 @@ func (a *NewRigController) TryNewRig(c *gin.Context, db databases.DBInterface) {
 
 	newUUID := uuid.New()
 
-	err = db.Save(&rig.Rig{
+	err = ctrl.DB.Create(&rig.Rig{
 		RigID:   newUUID.String(),
 		RigName: bodyData.RigName,
 	}).Error
@@ -74,11 +79,4 @@ func (a *NewRigController) TryNewRig(c *gin.Context, db databases.DBInterface) {
 	}
 
 	c.JSON(response.Code, response.Response)
-}
-
-func NewRig() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		cntrl := NewRigController{}
-		cntrl.TryNewRig(c, databases.DB)
-	}
 }

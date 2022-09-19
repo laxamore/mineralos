@@ -1,9 +1,10 @@
-package rigs
+package rig
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"github.com/laxamore/mineralos/internal/databases"
 	"gorm.io/gorm"
 	"io"
 	"net/http"
@@ -17,9 +18,10 @@ import (
 
 type dbMock struct {
 	mock.Mock
+	databases.DBInterface
 }
 
-func (a dbMock) Save(value interface{}) (tx *gorm.DB) {
+func (m dbMock) Create(value interface{}) (tx *gorm.DB) {
 	return &gorm.DB{Error: nil}
 }
 
@@ -68,10 +70,11 @@ func TestNewRig(t *testing.T) {
 				"privilege": td.privilege,
 			})
 
-			db := dbMock{}
-			cntrl := NewRigController{}
+			ctrl := RigController{
+				DB: dbMock{},
+			}
 
-			cntrl.TryNewRig(c, db)
+			ctrl.NewRig(c)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

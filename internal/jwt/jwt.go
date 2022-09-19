@@ -1,26 +1,33 @@
 package jwt
 
 import (
-	"os"
+	"github.com/laxamore/mineralos/config"
+	"github.com/laxamore/mineralos/internal/databases/models/user"
 	"time"
 
 	"github.com/golang-jwt/jwt"
 )
 
-func SignJWT(claims jwt.MapClaims, exp int64) (string, error) {
-	claims["exp"] = exp
-	claims["iat"] = time.Now().Unix()
+type JWTCustomClaims struct {
+	jwt.StandardClaims
+	Username string     `json:"username"`
+	Email    string     `json:"email"`
+	Role     *user.Role `json:"role"`
+}
+
+func SignJWT(claims JWTCustomClaims, exp int64) (string, error) {
+	claims.ExpiresAt = exp
+	claims.IssuedAt = time.Now().Unix()
 
 	signToken := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	token, err := signToken.SignedString([]byte(os.Getenv("JWT_SECRET")))
+	token, err := signToken.SignedString([]byte(config.Config.JWT_SECRET))
 
 	return token, err
 }
 
-func VerifyJWT(token string) (jwt.MapClaims, *jwt.Token, error) {
-	claims := jwt.MapClaims{}
-	tokenParsed, err := jwt.ParseWithClaims(token, claims, func(token *jwt.Token) (interface{}, error) {
-		return []byte(os.Getenv("JWT_SECRET")), nil
+func VerifyJWT(token string) (claims JWTCustomClaims, tokenParsed *jwt.Token, err error) {
+	tokenParsed, err = jwt.ParseWithClaims(token, &claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(config.Config.JWT_SECRET), nil
 	})
 	return claims, tokenParsed, err
 }

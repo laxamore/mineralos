@@ -77,10 +77,9 @@ func TestNewWallet(t *testing.T) {
 				"privilege": td.privilege,
 			})
 
-			repo := NewWalletRepositoryMock{}
-			cntrl := NewWalletController{}
+			ctrl := RigController{}
 
-			cntrl.TryNewWallet(c, nil, repo)
+			ctrl.NewWallet(c)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

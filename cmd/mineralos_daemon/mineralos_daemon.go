@@ -31,7 +31,7 @@ type rigConfig struct {
 }
 
 func readConf() rigConfig {
-	file, err := os.Open("/mineralos/etc/rig.conf")
+	file, err := os.Open("/mineralos/etc/rigs.conf")
 
 	defer func() {
 		if err = file.Close(); err != nil {

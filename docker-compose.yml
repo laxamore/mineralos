@@ -2,49 +2,54 @@ version: "3.9"
 
 services:
 
-  frontend:
-    ports:
-      - 3000:3000
-    build:
-      context: website/
-      dockerfile: Dockerfile
-    volumes:
-      - ./website/:/usr/src/app
-      - ./.env:/usr/src/.env
-      - ./docker_startup.sh:/usr/src/docker_startup.sh
-    command: "bash ../docker_startup.sh website ${ENV}"
-    restart: unless-stopped
-    networks:
-      - mineralos-network
+#  frontend:
+#    ports:
+#      - 3000:3000
+#    build:
+#      context: website/
+#      dockerfile: Dockerfile
+#    volumes:
+#      - ./website/:/usr/src/app
+#      - ./.env:/usr/src/.env
+#      - ./docker_startup.sh:/usr/src/docker_startup.sh
+#    command: "bash ../docker_startup.sh website ${ENV}"
+#    restart: unless-stopped
+#    networks:
+#      - mineralos-network
+#
+#  backend_api:
+#    ports:
+#      - 5000:5000
+#    build:
+#      context: ./
+#      dockerfile: Dockerfile
+#    volumes:
+#      - ./:/go/src/github.com/laxamore/mineralos
+#    command: "sh docker_startup.sh backend_api ${ENV}"
+#    restart: unless-stopped
+#    networks:
+#      - mineralos-network
   
-  backend_api:
-    ports:
-      - 5000:5000
-    build:
-      context: ./
-      dockerfile: Dockerfile      
-    volumes:
-      - ./:/go/src/github.com/laxamore/mineralos
-    command: "sh docker_startup.sh backend_api ${ENV}"
-    restart: unless-stopped
-    networks:
-      - mineralos-network
-  
-  mariadb:
-    ports:
-      - 3306:3306
-    image: mariadb
+  postgres:
+    image: postgres
+    container_name: mineralos-postgres
+    hostname: mineralos-postgres
     environment:
-      - MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=yes
-      - MARIADB_USER=mineralos
-      - MARIADB_PASSWORD=mineralosadmin
-      - MARIADB_DATABASE=mineralos
+      - POSTGRES_USER=mineralos
+      - POSTGRES_PASSWORD=mineralosadmin
+      - POSTGRES_DB=mineralos
     volumes:
-      - $HOME/docker/volumes/mineralos/mariadb:/var/lib/mysql
+      - $HOME/docker/volumes/mineralos/postgres/data:/var/lib/postgresql/data
     restart: unless-stopped
-    networks:
-      - mineralos-network
+    ports:
+      - 5432:5432
 
-networks:
-  mineralos-network:
-    driver: bridge
+  redis_db_service:
+    image: redis
+    container_name: mineralos-redis
+    hostname: mineralos-redis
+    restart: always
+    command: >
+      --requirepass admin
+    ports:
+      - 6377:6379

@@ -3,182 +3,100 @@ package users
 import (
 	"bytes"
 	"encoding/json"
-	"errors"
 	"fmt"
+	"github.com/gin-gonic/gin"
+	"github.com/go-sql-driver/mysql"
+	"github.com/laxamore/mineralos/internal/db"
+	"github.com/laxamore/mineralos/internal/db/models"
+	"github.com/stretchr/testify/mock"
+	"github.com/stretchr/testify/require"
+	"gorm.io/gorm"
 	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
-
-	"github.com/gin-gonic/gin"
-	"github.com/stretchr/testify/mock"
-	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type RegisterRepositoryMock struct {
+type dbMock struct {
 	mock.Mock
+	db.IDB
+	db.IRedis
 }
 
-func (a RegisterRepositoryMock) FindOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) map[string]interface{} {
-	users := []map[string]interface{}{{
-		"username":  "testexist",
-		"email":     "test@testexist.com",
-		"password":  "937e8d5fbb48bd4949536cd65b8d35c426b80d2f830c5c308e2cdec422ae2244",
-		"privilege": "admin",
-	}}
+func (m dbMock) Create(value interface{}) (tx *gorm.DB) {
+	if value.(*models.User).Username == "testexist" || value.(*models.User).Email == "test@testexist.com" {
+		var mysqlError *mysql.MySQLError
+		mysqlError = &mysql.MySQLError{
+			Number: 1062,
+		}
 
-	var input map[string]interface{}
-
-	filterBytes, _ := bson.Marshal(filter)
-	bson.Unmarshal(filterBytes, &input)
-
-	for i := range users {
-		if input["username"] == users[i]["username"] || input["email"] == users[i]["email"] {
-			return users[i]
+		return &gorm.DB{
+			Error: mysqlError,
 		}
 	}
-
-	return map[string]interface{}{}
-}
-
-func (a RegisterRepositoryMock) InsertOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) (*mongo.InsertOneResult, error) {
-	var insertOneResult *mongo.InsertOneResult
-	return insertOneResult, nil
-}
-
-func (a RegisterRepositoryMock) DeleteOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) (*mongo.DeleteResult, error) {
-	registerToken := []map[string]interface{}{{
-		"createdAt": time.Now(),
-		"token":     "testtesttesttest",
-		"privilege": "readOnly",
-	}}
-
-	var DeleteResult *mongo.DeleteResult
-	var input map[string]interface{}
-	filterBytes, _ := bson.Marshal(filter)
-	bson.Unmarshal(filterBytes, &input)
-
-	for i := range registerToken {
-		if registerToken[i]["token"] == input["token"] {
-			return DeleteResult, nil
-		}
-	}
-
-	return DeleteResult, errors.New("DeleteOne Failed:\n")
-}
-
-func (a RegisterRepositoryMock) IndexesReplaceMany(client *mongo.Client, db_name string, collection_name string, indexModel []mongo.IndexModel) ([]string, error) {
-	return []string{}, nil
+	return &gorm.DB{Error: nil}
 }
 
 func TestRegister(t *testing.T) {
 	type TestData struct {
-		testName     string
-		expectedCode int
-		bodyData     map[string]interface{}
-		token        map[string]interface{}
+		testName        string
+		expectedCode    int
+		registerRequest RegisterRequest
 	}
 
 	testData := []TestData{
 		{
 			testName:     "SuccessRegister",
 			expectedCode: http.StatusOK,
-			bodyData: map[string]interface{}{
-				"username": "test",
-				"email":    "test@test.com",
-				"password": "test1234",
-			},
-			token: map[string]interface{}{
-				"createdAt": time.Now(),
-				"token":     "testtesttesttest",
-				"privilege": "readOnly",
-			},
-		},
-		{
-			testName:     "TokenFailed",
-			expectedCode: http.StatusNotFound,
-			bodyData: map[string]interface{}{
-				"username": "test",
-				"email":    "test@test.com",
-				"password": "test1234",
-			},
-			token: map[string]interface{}{
-				"createdAt": time.Now(),
-				"token":     "",
-				"privilege": "readOnly",
+			registerRequest: RegisterRequest{
+				Username: "test",
+				Password: "test1234",
+				Email:    "test@test.com",
 			},
 		},
 		{
 			testName:     "WithExistingUsername",
 			expectedCode: http.StatusConflict,
-			bodyData: map[string]interface{}{
-				"username": "testexist",
-				"email":    "test@test.com",
-				"password": "test1234",
-			},
-			token: map[string]interface{}{
-				"createdAt": time.Now(),
-				"token":     "testtesttesttest",
-				"privilege": "readOnly",
+			registerRequest: RegisterRequest{
+				Username: "testexist",
+				Email:    "test@test.com",
+				Password: "test1234",
 			},
 		},
 		{
 			testName:     "WithExistingEmail",
 			expectedCode: http.StatusConflict,
-			bodyData: map[string]interface{}{
-				"username": "test",
-				"email":    "test@testexist.com",
-				"password": "test1234",
-			},
-			token: map[string]interface{}{
-				"createdAt": time.Now(),
-				"token":     "testtesttesttest",
-				"privilege": "readOnly",
+			registerRequest: RegisterRequest{
+				Username: "test",
+				Email:    "test@testexist.com",
+				Password: "test1234",
 			},
 		},
 		{
 			testName:     "InvalidEmail",
 			expectedCode: http.StatusBadRequest,
-			bodyData: map[string]interface{}{
-				"username": "test",
-				"email":    "testemail.com",
-				"password": "test1234",
-			},
-			token: map[string]interface{}{
-				"createdAt": time.Now(),
-				"token":     "testtesttesttest",
-				"privilege": "readOnly",
+			registerRequest: RegisterRequest{
+				Username: "test",
+				Email:    "testemail.com",
+				Password: "test1234",
 			},
 		},
 		{
 			testName:     "InvalidUsername",
 			expectedCode: http.StatusBadRequest,
-			bodyData: map[string]interface{}{
-				"username": "!@test",
-				"email":    "testemail.com",
-				"password": "test1234",
-			},
-			token: map[string]interface{}{
-				"createdAt": time.Now(),
-				"token":     "testtesttesttest",
-				"privilege": "readOnly",
+			registerRequest: RegisterRequest{
+				Username: "!@test",
+				Email:    "testemail.com",
+				Password: "test1234",
 			},
 		},
 		{
 			testName:     "InvalidPassword",
 			expectedCode: http.StatusBadRequest,
-			bodyData: map[string]interface{}{
-				"username": "test",
-				"email":    "testemail.com",
-				"password": "test123",
-			},
-			token: map[string]interface{}{
-				"createdAt": time.Now(),
-				"token":     "testtesttesttest",
-				"privilege": "readOnly",
+			registerRequest: RegisterRequest{
+				Username: "test",
+				Email:    "testemail.com",
+				Password: "test123",
 			},
 		},
 	}
@@ -193,18 +111,18 @@ func TestRegister(t *testing.T) {
 				Header: make(http.Header),
 			}
 
-			c.Set("token", td.token)
+			c.Set("role", models.RoleUser)
 
-			jsonbytes, err := json.Marshal(td.bodyData)
+			jsonbytes, err := json.Marshal(td.registerRequest)
 			if err != nil {
 				panic(err)
 			}
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
 
-			repo := RegisterRepositoryMock{}
-			cntrl := RegisterController{}
-
-			cntrl.TryRegister(c, nil, repo)
+			ctrl := UserController{
+				DB: &dbMock{},
+			}
+			ctrl.Register(c)
 
 			t.Logf("Response Body: %s", w.Body.String())
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))

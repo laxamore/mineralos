@@ -14,11 +14,15 @@ type ConfigStruct struct {
 	// End of RPC Config
 
 	// Database Config
-	DB_USER     string `mapstructure:"DB_USER"`
-	DB_PASSWORD string `mapstructure:"DB_PASSWORD"`
-	DB_HOST     string `mapstructure:"DB_HOST"`
-	DB_PORT     int    `mapstructure:"DB_PORT"`
-	DB_NAME     string `mapstructure:"DB_NAME"`
+	DB_USER        string `mapstructure:"DB_USER"`
+	DB_PASSWORD    string `mapstructure:"DB_PASSWORD"`
+	DB_HOST        string `mapstructure:"DB_HOST"`
+	DB_PORT        int    `mapstructure:"DB_PORT"`
+	DB_NAME        string `mapstructure:"DB_NAME"`
+	REDIS_HOST     string `mapstructure:"REDIS_HOST"`
+	REDIS_PORT     int    `mapstructure:"REDIS_PORT"`
+	REDIS_USER     string `mapstructure:"REDIS_USER"`
+	REDIS_PASSWORD string `mapstructure:"REDIS_PASSWORD"`
 	// End of Database Config
 
 	// Auth Config

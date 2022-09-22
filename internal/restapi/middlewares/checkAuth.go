@@ -1,7 +1,7 @@
-package middleware
+package middlewares
 
 import (
-	"github.com/laxamore/mineralos/internal/databases/models/user"
+	"github.com/laxamore/mineralos/internal/db/models"
 	"github.com/laxamore/mineralos/internal/jwt"
 	"github.com/laxamore/mineralos/internal/logger"
 	"net/http"
@@ -11,17 +11,17 @@ import (
 )
 
 func CheckAuth(c *gin.Context) {
-	CheckAuthRole(&user.RoleUser)
+	CheckAuthRole(&models.RoleUser)
 }
 
-func CheckAuthRole(role *user.Role) gin.HandlerFunc {
+func CheckAuthRole(role *models.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		middlewareCtrl := MiddlewareController{}
 		middlewareCtrl.CheckAuthRole(c, role)
 	}
 }
 
-func (ctrl MiddlewareController) CheckAuthRole(c *gin.Context, role *user.Role) {
+func (ctrl MiddlewareController) CheckAuthRole(c *gin.Context, role *models.Role) {
 	bearerToken := c.GetHeader("Authorization")
 
 	if bearerToken != "" {

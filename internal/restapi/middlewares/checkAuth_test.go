@@ -1,10 +1,10 @@
-package middleware
+package middlewares
 
 import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/config"
-	"github.com/laxamore/mineralos/internal/databases/models/user"
+	"github.com/laxamore/mineralos/internal/db/models"
 	JWT "github.com/laxamore/mineralos/internal/jwt"
 	"github.com/stretchr/testify/require"
 	"net/http"
@@ -17,22 +17,22 @@ func TestCheckAuth(t *testing.T) {
 	type TestData struct {
 		testName     string
 		expectedCode int
-		roleToCheck  *user.Role
-		actualRole   *user.Role
+		roleToCheck  *models.Role
+		actualRole   *models.Role
 	}
 
 	testData := []TestData{
 		{
 			testName:     "OKCheckAuthRole",
 			expectedCode: http.StatusOK,
-			roleToCheck:  &user.RoleAdmin,
-			actualRole:   &user.RoleAdmin,
+			roleToCheck:  &models.RoleAdmin,
+			actualRole:   &models.RoleAdmin,
 		},
 		{
 			testName:     "UnauthorizedCheckAuthRole",
 			expectedCode: http.StatusUnauthorized,
-			roleToCheck:  &user.RoleAdmin,
-			actualRole:   &user.RoleUser,
+			roleToCheck:  &models.RoleAdmin,
+			actualRole:   &models.RoleUser,
 		},
 	}
 

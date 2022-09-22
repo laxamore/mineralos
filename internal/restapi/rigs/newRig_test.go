@@ -1,10 +1,10 @@
-package rig
+package rigs
 
 import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/laxamore/mineralos/internal/databases"
+	"github.com/laxamore/mineralos/internal/db"
 	"gorm.io/gorm"
 	"io"
 	"net/http"
@@ -18,7 +18,7 @@ import (
 
 type dbMock struct {
 	mock.Mock
-	databases.DBInterface
+	db.IDB
 }
 
 func (m dbMock) Create(value interface{}) (tx *gorm.DB) {

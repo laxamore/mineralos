@@ -1,13 +1,16 @@
-package user
+package models
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	ID        uint `gorm:"primarykey"`
 	CreatedAt time.Time
 	UpdatedAt time.Time
 	Username  string `gorm:"uniqueIndex" json:"username"`
-	Password  string `gorm:"not null" json:"password"`
+	Password  string `json:"password"`
 	Email     string `gorm:"uniqueIndex" json:"email"`
-	Role      Role   `gorm:"not null" json:"role"`
+	RoleID    string `json:"role_id"`
+	Role      Role   `gorm:"references:RoleName" json:"role"`
 }

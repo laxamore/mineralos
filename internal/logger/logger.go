@@ -2,8 +2,6 @@ package logger
 
 import (
 	"log"
-
-	"github.com/gin-gonic/gin"
 )
 
 func Printf(format string, v ...interface{}) {
@@ -14,18 +12,18 @@ func Print(format ...interface{}) {
 	log.Print(format...)
 }
 
+func Error(format ...interface{}) {
+	log.Print(format...)
+}
+
+func Errorf(format string, v ...interface{}) {
+	log.Printf(format, v...)
+}
+
 func Panic(format ...interface{}) {
-	if gin.Mode() == gin.TestMode {
-		log.Print(format...)
-	} else {
-		log.Panic(format...)
-	}
+	log.Panic(format...)
 }
 
 func Panicf(format string, v ...interface{}) {
-	if gin.Mode() == gin.TestMode {
-		log.Printf(format, v...)
-	} else {
-		log.Panicf(format, v...)
-	}
+	log.Panicf(format, v...)
 }

@@ -2,7 +2,7 @@ package jwt
 
 import (
 	"github.com/laxamore/mineralos/config"
-	"github.com/laxamore/mineralos/internal/databases/models/user"
+	"github.com/laxamore/mineralos/internal/db/models"
 	"time"
 
 	"github.com/golang-jwt/jwt"
@@ -10,9 +10,9 @@ import (
 
 type JWTCustomClaims struct {
 	jwt.StandardClaims
-	Username string     `json:"username"`
-	Email    string     `json:"email"`
-	Role     *user.Role `json:"role"`
+	Username string       `json:"username"`
+	Email    string       `json:"email"`
+	Role     *models.Role `json:"role"`
 }
 
 func SignJWT(claims JWTCustomClaims, exp int64) (string, error) {

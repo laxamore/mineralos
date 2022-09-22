@@ -1,11 +1,10 @@
-package rig
+package rigs
 
 import (
 	"encoding/json"
-	"github.com/laxamore/mineralos/internal/databases"
-	"github.com/laxamore/mineralos/internal/databases/models/rig"
+	"github.com/laxamore/mineralos/internal/db"
+	"github.com/laxamore/mineralos/internal/db/models"
 	"github.com/laxamore/mineralos/internal/logger"
-	"github.com/laxamore/mineralos/internal/restapi"
 	"net/http"
 	"reflect"
 
@@ -19,24 +18,17 @@ type NewRigRequest struct {
 
 func NewRig(c *gin.Context) {
 	ctrl := &RigController{
-		DB: databases.DB,
+		DB: db.DB,
 	}
 	ctrl.NewRig(c)
 }
 
 func (ctrl RigController) NewRig(c *gin.Context) {
-	response := restapi.Result{
-		Code: http.StatusForbidden,
-		Response: map[string]interface{}{
-			"rig_id": nil,
-		},
-	}
-
 	bodyByte, err := c.GetRawData()
 
 	if err != nil {
 		logger.Printf("newRig get body request failed:\n%v", err)
-		c.JSON(response.Code, response.Response)
+		c.JSON(http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -45,7 +37,7 @@ func (ctrl RigController) NewRig(c *gin.Context) {
 
 	if err != nil {
 		logger.Printf("newRig unmarshal body request failed:\n%v", err)
-		c.JSON(response.Code, response.Response)
+		c.JSON(http.StatusBadRequest, "Bad Request")
 		return
 	}
 
@@ -63,20 +55,18 @@ func (ctrl RigController) NewRig(c *gin.Context) {
 
 	newUUID := uuid.New()
 
-	err = ctrl.DB.Create(&rig.Rig{
+	err = ctrl.DB.Create(&models.Rig{
 		RigID:   newUUID.String(),
 		RigName: bodyData.RigName,
 	}).Error
 
 	if err != nil {
-		logger.Printf("error creating new rig %v", err)
+		logger.Printf("error creating new rigs %v", err)
+		c.JSON(http.StatusInternalServerError, "Internal Server Error")
 	} else {
-		response.Code = http.StatusOK
-		response.Response = gin.H{
+		c.JSON(http.StatusOK, gin.H{
 			"rig_name": bodyData.RigName,
 			"rig_id":   newUUID,
-		}
+		})
 	}
-
-	c.JSON(response.Code, response.Response)
 }

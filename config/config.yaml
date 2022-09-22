@@ -3,10 +3,16 @@
 
 # Database Config
 "DB_HOST": "localhost"
-"DB_PORT": 3306
+"DB_PORT": 5432
 "DB_USER": "mineralos"
 "DB_PASSWORD": "mineralosadmin"
 "DB_NAME": "mineralos"
+
+# Redis Config
+"REDIS_HOST": "localhost"
+"REDIS_PORT": 6377
+"REDIS_PASSWORD": "admin"
+"REDIS_USER": ""
 
 # Auth Config
 "ACCESS_TOKEN_EXPIRED": 3600
@@ -14,7 +20,7 @@
 "JWT_SECRET": "mineralos"
 
 # REST API Config
-"REST_API_PORT": 8080
+"REST_API_PORT": 5000
 "REST_API_HOST": "localhost"
 "CORS_ALLOW_ORIGIN":
   - "*"

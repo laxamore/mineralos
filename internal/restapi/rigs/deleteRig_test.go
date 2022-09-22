@@ -91,10 +91,9 @@ func TestDeleteRig(t *testing.T) {
 				"privilege": td.privilege,
 			})
 
-			repo := DeleteRigRepositoryMock{}
-			cntrl := DeleteRigController{}
+			ctrl := RigController{}
 
-			cntrl.TryDeleteRig(c, nil, repo)
+			ctrl.DeleteRig(c)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

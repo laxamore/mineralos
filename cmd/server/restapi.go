@@ -17,8 +17,8 @@ func restApi() {
 	router.Use(middlewares.CORSMiddleware)
 
 	router.POST(v1.BASE_PATH+"/newRig", middlewares.CheckAuthRole(&models.RoleOperator), rigs.NewRig)
-	router.DELETE(v1.BASE_PATH+"/deleteRig", middlewares.CheckAuth, rigs.DeleteRig)
-	//router.GET("/api/v1/getRigs", middlewares.CheckAuth, rigs.GetRigs(client))
+	//router.DELETE(v1.BASE_PATH+"/deleteRig", middlewares.CheckAuth, rigs.DeleteRig)
+	router.GET(v1.BASE_PATH+"/getRigs", middlewares.CheckAuth, rigs.GetRig)
 	//router.GET("/api/v1/getRig/:rig_id", middlewares.CheckAuth, rigs.GetRig(client))
 	//
 	//router.POST("/api/v1/newWallet", middlewares.CheckAuth, rigs.NewWallet(client))
@@ -29,7 +29,7 @@ func restApi() {
 	//
 	router.POST(v1.BASE_PATH+"/register", middlewares.BeforeRegister, users.Register)
 	//router.POST("/api/v1/registerToken", middlewares.VerifyAdmin, users.RegisterToken(client))
-	router.POST("/api/v1/login", users.Login)
+	router.POST(v1.BASE_PATH+"/login", users.Login)
 	//router.POST("/api/v1/refreshToken", users.RefreshToken(client))
 	//router.POST("/api/v1/logout", middlewares.CheckAuth, users.Logout)
 

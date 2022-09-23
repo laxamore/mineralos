@@ -2,14 +2,13 @@ package users
 
 import (
 	"bytes"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/config"
 	"github.com/laxamore/mineralos/internal/db"
 	"github.com/laxamore/mineralos/internal/db/models"
+	"github.com/laxamore/mineralos/internal/jwt"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
 	"gorm.io/gorm"
@@ -22,22 +21,17 @@ import (
 type loginMock struct {
 	mock.Mock
 	db.IDB
-	db.IRedis
+	jwt.Cmd
 }
 
-func (m *loginMock) First(out interface{}, where ...interface{}) *gorm.DB {
-	correctPassword := "test1234"
-	hasher := sha256.New()
-	hasher.Write([]byte(fmt.Sprintf("%s", correctPassword)))
-	hashedPassword := hex.EncodeToString(hasher.Sum(nil))
+func (m loginMock) First(out interface{}, where ...interface{}) *gorm.DB {
+	args := m.Called(out, where)
+	return args.Get(0).(*gorm.DB)
+}
 
-	if where[0].(string) == "username = ? AND password = ?" && where[1].(string) == "test" && where[2].(string) == hashedPassword {
-		*out.(*models.User) = models.User{
-			Username: "test",
-		}
-		return &gorm.DB{Error: nil}
-	}
-	return &gorm.DB{Error: gorm.ErrRecordNotFound}
+func (m loginMock) SignJWT(claims jwt.Claims) (string, error) {
+	args := m.Called(claims)
+	return args.String(0), args.Error(1)
 }
 
 func TestLogin(t *testing.T) {
@@ -61,7 +55,7 @@ func TestLogin(t *testing.T) {
 			expectedCode: http.StatusUnauthorized,
 			loginRequest: LoginRequest{
 				Username: "test",
-				Password: "testfailed",
+				Password: "test1234",
 			},
 		}, {
 			testName:     "NoPassword",
@@ -85,6 +79,22 @@ func TestLogin(t *testing.T) {
 
 	for _, td := range testData {
 		t.Run(td.testName, func(t *testing.T) {
+			// Mocking
+			mockInterface := &loginMock{}
+
+			switch td.testName {
+			case "SuccessLogin":
+				mockInterface.On("First", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&gorm.DB{Error: nil}).Run(func(args mock.Arguments) {
+					user := args.Get(0).(*models.User)
+					user.Username = "test"
+				})
+				mockInterface.On("SignJWT", mock.Anything).Return("token", nil)
+			case "FailedLogin":
+				mockInterface.On("First", mock.Anything, mock.Anything, mock.Anything, mock.Anything).Return(&gorm.DB{Error: gorm.ErrRecordNotFound})
+			}
+			// End of mocking
+
+			// Setup
 			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -98,12 +108,14 @@ func TestLogin(t *testing.T) {
 				panic(err)
 			}
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
+			// End of setup
 
+			// Run Test
 			ctrl := UserController{
-				DB: &loginMock{},
+				DB:         mockInterface,
+				JWTService: mockInterface,
 			}
 			ctrl.Login(c)
-
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

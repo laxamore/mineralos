@@ -68,8 +68,7 @@ func (ctrl UserController) Register(c *gin.Context) {
 				Username: registerRequest.Username,
 				Email:    registerRequest.Email,
 				Password: hashedPassword,
-				//Role:     regisRole,
-				Role: role.(models.Role),
+				Role:     role.(models.Role),
 			}
 			err = ctrl.DB.Create(&user).Error
 

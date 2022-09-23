@@ -6,11 +6,10 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/golang-jwt/jwt"
 	"github.com/laxamore/mineralos/config"
 	"github.com/laxamore/mineralos/internal/db"
 	"github.com/laxamore/mineralos/internal/db/models"
-	JWT "github.com/laxamore/mineralos/internal/jwt"
+	"github.com/laxamore/mineralos/internal/jwt"
 	"github.com/laxamore/mineralos/internal/logger"
 	"net/http"
 	"net/url"
@@ -24,8 +23,11 @@ type LoginRequest struct {
 }
 
 func Login(c *gin.Context) {
+	jwtService := jwt.NewService()
+
 	ctrl := UserController{
-		DB: db.DB,
+		DB:         db.DB,
+		JWTService: jwtService,
 	}
 	ctrl.Login(c)
 }
@@ -62,17 +64,16 @@ func (ctrl UserController) Login(c *gin.Context) {
 		expRT := config.Config.REFRESH_TOKEN_EXPIRED + time.Now().Unix()
 
 		// Create the Claims for token
-		claims := JWT.LoginClaims{
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: exp,
-				IssuedAt:  time.Now().Unix(),
-			},
+		claims := jwt.LoginClaims{
 			Username:       loginUser.Username,
 			Email:          loginUser.Email,
 			Role:           &loginUser.Role,
 			IsRefreshToken: false,
 		}
-		token, err := JWT.SignJWT(&claims)
+		claims.ExpiresAt = exp
+		claims.IssuedAt = time.Now().Unix()
+
+		token, err := ctrl.JWTService.SignJWT(&claims)
 		if err != nil {
 			logger.Errorf("Login Sign JWT Failed:\n%v", err)
 			c.JSON(http.StatusInternalServerError, "Internal Server Error")
@@ -80,17 +81,16 @@ func (ctrl UserController) Login(c *gin.Context) {
 		}
 
 		// Create the claims for refresh token
-		claims = JWT.LoginClaims{
-			StandardClaims: jwt.StandardClaims{
-				ExpiresAt: expRT,
-				IssuedAt:  time.Now().Unix(),
-			},
+		claims = jwt.LoginClaims{
 			Username:       loginUser.Username,
 			Email:          loginUser.Email,
 			Role:           &loginUser.Role,
 			IsRefreshToken: true,
 		}
-		rtoken, err := JWT.SignJWT(&claims)
+		claims.ExpiresAt = expRT
+		claims.IssuedAt = time.Now().Unix()
+
+		rtoken, err := ctrl.JWTService.SignJWT(&claims)
 
 		if err != nil {
 			logger.Errorf("Login Sign JWT Failed:\n%v", err)

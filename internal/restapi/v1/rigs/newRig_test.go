@@ -16,13 +16,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type dbMock struct {
+type newRigMock struct {
 	mock.Mock
 	db.IDB
 }
 
-func (m dbMock) Create(value interface{}) (tx *gorm.DB) {
-	return &gorm.DB{Error: nil}
+func (m newRigMock) Create(value interface{}) (tx *gorm.DB) {
+	args := m.Called(value)
+	return args.Get(0).(*gorm.DB)
 }
 
 func TestNewRig(t *testing.T) {
@@ -52,6 +53,12 @@ func TestNewRig(t *testing.T) {
 
 	for _, td := range testData {
 		t.Run(td.testName, func(t *testing.T) {
+			// Mocking
+			mockInterface := &newRigMock{}
+			mockInterface.On("Create", mock.Anything).Return(&gorm.DB{})
+			// End of mocking
+
+			// Setup
 			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -69,12 +76,14 @@ func TestNewRig(t *testing.T) {
 			c.Set("tokenClaims", map[string]interface{}{
 				"privilege": td.privilege,
 			})
+			// End of setup
 
+			// Run Test
 			ctrl := RigController{
-				DB: dbMock{},
+				DB: mockInterface,
 			}
-
 			ctrl.NewRig(c)
+
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

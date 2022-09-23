@@ -2,6 +2,8 @@ package rigs
 
 import (
 	"fmt"
+	"github.com/laxamore/mineralos/internal/db"
+	"gorm.io/gorm"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,28 +11,16 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/mock"
 	"github.com/stretchr/testify/require"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
-type GetRigRepositoryMock struct {
+type getRigMock struct {
 	mock.Mock
+	db.IDB
 }
 
-func (a GetRigRepositoryMock) FindOne(client *mongo.Client, db_name string, collection_name string, filter interface{}) map[string]interface{} {
-	dumyData := map[string]interface{}{
-		"rig_id": "testtesttest",
-	}
-
-	var input map[string]interface{}
-	filterBytes, _ := bson.Marshal(filter)
-	bson.Unmarshal(filterBytes, &input)
-
-	if input["rig_id"] == dumyData["rig_id"] {
-		return dumyData
-	}
-
-	return map[string]interface{}{}
+func (m *getRigMock) First(out interface{}, where ...interface{}) *gorm.DB {
+	args := m.Called(out, where)
+	return args.Get(0).(*gorm.DB)
 }
 
 func TestGetRig(t *testing.T) {
@@ -43,18 +33,28 @@ func TestGetRig(t *testing.T) {
 	testData := []TestData{
 		{
 			testName:     "SuccessGetRig",
-			rig_id:       "testtesttest",
 			expectedCode: http.StatusOK,
 		},
 		{
 			testName:     "FailGetRig",
-			rig_id:       "failfailfail",
 			expectedCode: http.StatusNotFound,
 		},
 	}
 
 	for _, td := range testData {
 		t.Run(td.testName, func(t *testing.T) {
+			// Mocking
+			mockInterface := &getRigMock{}
+
+			switch td.testName {
+			case "SuccessGetRig":
+				mockInterface.On("First", mock.Anything, mock.Anything, mock.Anything).Return(&gorm.DB{Error: nil})
+			case "FailGetRig":
+				mockInterface.On("First", mock.Anything, mock.Anything, mock.Anything).Return(&gorm.DB{Error: gorm.ErrRecordNotFound})
+			}
+			// End of mocking
+
+			// Setup
 			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -69,11 +69,14 @@ func TestGetRig(t *testing.T) {
 					Value: td.rig_id,
 				},
 			}
+			// End of setup
 
-			repo := GetRigRepositoryMock{}
-			cntrl := GetRigController{}
+			// Run Test
+			cntrl := RigController{
+				DB: mockInterface,
+			}
+			cntrl.GetRig(c)
 
-			cntrl.TryGetRig(c, nil, repo)
 			require.EqualValues(t, fmt.Sprintf("HTTP Status Code: %d", td.expectedCode), fmt.Sprintf("HTTP Status Code: %d", w.Code))
 		})
 	}

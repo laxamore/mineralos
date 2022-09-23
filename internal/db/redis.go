@@ -20,6 +20,5 @@ func ConnectRedis() {
 		Password: config.Config.REDIS_PASSWORD, // no password set
 		Username: config.Config.REDIS_USER,
 		DB:       0, // use default DB
-
 	})
 }

@@ -24,17 +24,8 @@ type registerMock struct {
 }
 
 func (m registerMock) Create(value interface{}) (tx *gorm.DB) {
-	if value.(*models.User).Username == "testexist" || value.(*models.User).Email == "test@testexist.com" {
-		var mysqlError *mysql.MySQLError
-		mysqlError = &mysql.MySQLError{
-			Number: 1062,
-		}
-
-		return &gorm.DB{
-			Error: mysqlError,
-		}
-	}
-	return &gorm.DB{Error: nil}
+	args := m.Called(value)
+	return args.Get(0).(*gorm.DB)
 }
 
 func TestRegister(t *testing.T) {
@@ -55,20 +46,11 @@ func TestRegister(t *testing.T) {
 			},
 		},
 		{
-			testName:     "WithExistingUsername",
-			expectedCode: http.StatusConflict,
-			registerRequest: RegisterRequest{
-				Username: "testexist",
-				Email:    "test@test.com",
-				Password: "test1234",
-			},
-		},
-		{
-			testName:     "WithExistingEmail",
+			testName:     "DuplicateUser",
 			expectedCode: http.StatusConflict,
 			registerRequest: RegisterRequest{
 				Username: "test",
-				Email:    "test@testexist.com",
+				Email:    "test@test.com",
 				Password: "test1234",
 			},
 		},
@@ -95,7 +77,7 @@ func TestRegister(t *testing.T) {
 			expectedCode: http.StatusBadRequest,
 			registerRequest: RegisterRequest{
 				Username: "test",
-				Email:    "testemail.com",
+				Email:    "test@email.com",
 				Password: "test123",
 			},
 		},
@@ -103,6 +85,17 @@ func TestRegister(t *testing.T) {
 
 	for _, td := range testData {
 		t.Run(td.testName, func(t *testing.T) {
+			// Mocking
+			mockInterface := &registerMock{}
+			switch td.testName {
+			case "SuccessRegister":
+				mockInterface.On("Create", mock.Anything).Return(&gorm.DB{Error: nil})
+			case "DuplicateUser":
+				mockInterface.On("Create", mock.Anything).Return(&gorm.DB{Error: &mysql.MySQLError{Number: 1062}})
+			}
+			// End of mocking
+
+			// Setup
 			gin.SetMode(gin.TestMode)
 			w := httptest.NewRecorder()
 			c, _ := gin.CreateTestContext(w)
@@ -118,9 +111,11 @@ func TestRegister(t *testing.T) {
 				panic(err)
 			}
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
+			// End of setup
 
+			// Run Test
 			ctrl := UserController{
-				DB: &registerMock{},
+				DB: mockInterface,
 			}
 			ctrl.Register(c)
 

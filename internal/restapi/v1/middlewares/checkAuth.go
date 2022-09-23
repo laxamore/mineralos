@@ -27,7 +27,7 @@ func (ctrl MiddlewareController) CheckAuthRole(c *gin.Context, role *models.Role
 	if bearerToken != "" {
 		token := strings.Split(bearerToken, " ")[1]
 		tokenClaims := jwt.LoginClaims{}
-		tokenParsed, err := jwt.VerifyJWT(token, &tokenClaims)
+		tokenParsed, err := ctrl.JWTService.VerifyJWT(token, &tokenClaims)
 
 		if err != nil {
 			logger.Error("Failed to verify JWT ", err)

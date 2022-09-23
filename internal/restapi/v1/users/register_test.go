@@ -17,13 +17,13 @@ import (
 	"testing"
 )
 
-type dbMock struct {
+type registerMock struct {
 	mock.Mock
 	db.IDB
 	db.IRedis
 }
 
-func (m dbMock) Create(value interface{}) (tx *gorm.DB) {
+func (m registerMock) Create(value interface{}) (tx *gorm.DB) {
 	if value.(*models.User).Username == "testexist" || value.(*models.User).Email == "test@testexist.com" {
 		var mysqlError *mysql.MySQLError
 		mysqlError = &mysql.MySQLError{
@@ -120,7 +120,7 @@ func TestRegister(t *testing.T) {
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(jsonbytes))
 
 			ctrl := UserController{
-				DB: &dbMock{},
+				DB: &registerMock{},
 			}
 			ctrl.Register(c)
 

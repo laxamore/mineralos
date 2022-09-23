@@ -5,9 +5,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/laxamore/mineralos/config"
 	"github.com/laxamore/mineralos/internal/db/models"
-	"github.com/laxamore/mineralos/internal/restapi/middlewares"
-	"github.com/laxamore/mineralos/internal/restapi/rigs"
-	"github.com/laxamore/mineralos/internal/restapi/users"
+	v1 "github.com/laxamore/mineralos/internal/restapi/v1"
+	"github.com/laxamore/mineralos/internal/restapi/v1/middlewares"
+	"github.com/laxamore/mineralos/internal/restapi/v1/rigs"
+	"github.com/laxamore/mineralos/internal/restapi/v1/users"
 )
 
 func restApi() {
@@ -15,8 +16,8 @@ func restApi() {
 	router.Use(gin.Recovery())
 	router.Use(middlewares.CORSMiddleware)
 
-	router.POST("/api/v1/newRig", middlewares.CheckAuthRole(&models.RoleAdmin), rigs.NewRig)
-	router.DELETE("/api/v1/deleteRig", middlewares.CheckAuth, rigs.DeleteRig)
+	router.POST(v1.BASE_PATH+"/newRig", middlewares.CheckAuthRole(&models.RoleOperator), rigs.NewRig)
+	router.DELETE(v1.BASE_PATH+"/deleteRig", middlewares.CheckAuth, rigs.DeleteRig)
 	//router.GET("/api/v1/getRigs", middlewares.CheckAuth, rigs.GetRigs(client))
 	//router.GET("/api/v1/getRig/:rig_id", middlewares.CheckAuth, rigs.GetRig(client))
 	//
@@ -26,9 +27,9 @@ func restApi() {
 	//
 	//router.PUT("/api/v1/updateOC", middlewares.CheckAuth, rigs.UpdateOC(client))
 	//
-	router.POST("/api/v1/register", middlewares.BeforeRegister, users.Register)
+	router.POST(v1.BASE_PATH+"/register", middlewares.BeforeRegister, users.Register)
 	//router.POST("/api/v1/registerToken", middlewares.VerifyAdmin, users.RegisterToken(client))
-	//router.POST("/api/v1/login", users.Login(client))
+	router.POST("/api/v1/login", users.Login)
 	//router.POST("/api/v1/refreshToken", users.RefreshToken(client))
 	//router.POST("/api/v1/logout", middlewares.CheckAuth, users.Logout)
 

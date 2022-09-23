@@ -8,7 +8,7 @@ import (
 	"github.com/laxamore/mineralos/internal/db"
 	"github.com/laxamore/mineralos/internal/db/models"
 	"github.com/laxamore/mineralos/internal/logger"
-	"github.com/laxamore/mineralos/internal/restapi/users"
+	"github.com/laxamore/mineralos/internal/restapi/v1/users"
 	"gorm.io/gorm"
 	"io"
 	"net/http"

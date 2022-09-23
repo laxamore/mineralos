@@ -11,12 +11,17 @@ import (
 )
 
 func CheckAuth(c *gin.Context) {
-	CheckAuthRole(&models.RoleUser)
+	middlewareCtrl := MiddlewareController{
+		JWTService: jwt.NewService(),
+	}
+	middlewareCtrl.CheckAuthRole(c, &models.RoleUser)
 }
 
 func CheckAuthRole(role *models.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		middlewareCtrl := MiddlewareController{}
+		middlewareCtrl := MiddlewareController{
+			JWTService: jwt.NewService(),
+		}
 		middlewareCtrl.CheckAuthRole(c, role)
 	}
 }
@@ -45,7 +50,6 @@ func (ctrl MiddlewareController) CheckAuthRole(c *gin.Context, role *models.Role
 			if tokenParsed == nil || err != nil {
 				logger.Printf("Couldn't handle this token: %v", err)
 			} else if tokenParsed.Valid {
-				logger.Print("Token Valid")
 				c.Set("tokenClaims", tokenClaims)
 				c.Writer.WriteHeader(http.StatusOK)
 				return

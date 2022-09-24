@@ -17,6 +17,7 @@ type IDB interface {
 	Create(value interface{}) (tx *gorm.DB)
 	Delete(dest interface{}, conds ...interface{}) (tx *gorm.DB)
 	First(dest interface{}, conds ...interface{}) (tx *gorm.DB)
+	Find(dest interface{}, conds ...interface{}) (tx *gorm.DB)
 	Where(query interface{}, args ...interface{}) (tx *gorm.DB)
 	Unscoped() (tx *gorm.DB)
 }

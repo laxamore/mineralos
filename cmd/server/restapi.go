@@ -20,8 +20,8 @@ func restApi() {
 	router.DELETE(v1.BASE_PATH+"/deleteRig", middlewares.CheckAuthRole(&models.RoleOperator), rigs.DeleteRig)
 	router.GET(v1.BASE_PATH+"/getRigs", middlewares.CheckAuth, rigs.GetRigs)
 	router.GET(v1.BASE_PATH+"/getRig/:rig_id", middlewares.CheckAuth, rigs.GetRig)
-	//
-	//router.POST("/api/v1/newWallet", middlewares.CheckAuth, rigs.NewWallet(client))
+
+	router.POST(v1.BASE_PATH+"/newWallet", middlewares.CheckAuthRole(&models.RoleOperator), rigs.NewWallet)
 	//router.DELETE("/api/v1/deleteWallet", middlewares.CheckAuth, rigs.DeleteWallet(client))
 	//router.GET("/api/v1/getWallets", middlewares.CheckAuth, rigs.GetWallets(client))
 	//

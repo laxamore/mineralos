@@ -5,5 +5,6 @@ func GetModels() []interface{} {
 		&Rig{},
 		&User{},
 		&Role{},
+		&Wallet{},
 	}
 }
